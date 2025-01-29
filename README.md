@@ -10,6 +10,7 @@ A weather statistics application
     -  Data anlysis functions such as averaging
     -  Horizontal partitioning
     -  Provides a flexible schema, allowing me to hit the ground running and know I can change the schema when I need to
+    -  Includes built in geo-indexing - a huge plus for if I were to want to query for weather data near you 
  - Why I didn't pick PSQL
     - While my weather data is structured and can easily be pre-defined, I'd prefer not to get locked into a schema with likely future changes to the schema
     - I don't really <i>need</i> to worry about some code overwriting existing data. Once the weather data has been writen, it should not be updated ever again. While PSQL would benefit me if I had many users updating the same data, I don't exactly have this need so PSQL wouldn't add that benefit
