@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Getter
 @Document(collection = "weather_data")
 public final class WeatherData {
+    // TODO: Add unique constraints for timestamp to prevent duplicate entries due to qos
     @Id
     private String id;
     private final double temp;

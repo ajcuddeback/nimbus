@@ -40,6 +40,7 @@ public class WeatherDataCallback implements MqttCallback {
             );
 
             try {
+                // TODO: Look into retries
                 this.weatherDataService.saveWeatherData(weatherData);
             } catch (final Exception e) {
                 log.error("Failed to save weather data", e);

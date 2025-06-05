@@ -46,6 +46,7 @@ public final class MqttService {
     @PostConstruct
     public void init() {
         try {
+            // TODO: Look into refactoring to async mqtt client - as everything else will end up using project reactor/async coding anyway
             this.mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
             connect();
             log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId());
@@ -55,6 +56,7 @@ public final class MqttService {
     }
 
     public void connect() throws MqttException {
+        // TODO: Look into these connection options and test connection outages - ensure we can still pick up missed messages
         MqttConnectionOptions connectionOptions = new MqttConnectionOptions();
         connectionOptions.setUserName(user);
         connectionOptions.setPassword(password.getBytes(StandardCharsets.UTF_8));
