@@ -2,9 +2,11 @@ package com.nimbus.weatherapi.service;
 
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.repository.WeatherDataRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Service
 public final class WeatherDataService {
     private final WeatherDataRepository weatherDataRepository;
@@ -13,7 +15,11 @@ public final class WeatherDataService {
         this.weatherDataRepository = weatherDataRepository;
     }
 
-    public Mono<WeatherData> saveWeatherData(final WeatherData weatherData) {
-        return weatherDataRepository.save(weatherData);
+    public void saveWeatherData(final WeatherData weatherData) {
+        log.info("Saving the weather data...");
+        weatherDataRepository.save(weatherData)
+                .doOnError(err -> {
+                    log.error("Failed to save weather data", err);
+                }).subscribe();
     }
 } 

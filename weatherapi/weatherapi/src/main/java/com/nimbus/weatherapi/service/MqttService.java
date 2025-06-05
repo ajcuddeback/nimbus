@@ -68,7 +68,7 @@ public final class MqttService {
             throw new RuntimeException(e);
         }
 
-        this.mqttClient.setCallback(new WeatherDataCallback());
+        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService));
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
