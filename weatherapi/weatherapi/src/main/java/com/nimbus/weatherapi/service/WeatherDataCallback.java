@@ -3,12 +3,8 @@ package com.nimbus.weatherapi.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.nimbus.weatherapi.model.WeatherData;
-import com.nimbus.weatherapi.repository.WeatherDataRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.json.JsonObject;
-import org.eclipse.paho.mqttv5.client.IMqttDeliveryToken;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
@@ -27,17 +23,11 @@ public class WeatherDataCallback implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
-        // TODO: Figure out how to inject weather data repo and persist the weather data
-
         log.info("Received message: \n  topic：{}\n  Qos：{}\n  payload：{}", topic, message.getQos(), new String(message.getPayload()));
-
-//        final JsonObject json = new JsonObject(new String(message.getPayload()));
-
 
         final ObjectMapper mapper = new ObjectMapper();
         try {
             final JsonNode jsonNode = mapper.readTree(new String(message.getPayload()));
-            System.out.println(jsonNode.toString());
             final WeatherData weatherData = new WeatherData(
                     jsonNode.get("temp").asDouble(),
                     jsonNode.get("temp_format").asText(),
@@ -49,20 +39,14 @@ public class WeatherDataCallback implements MqttCallback {
                     jsonNode.get("station_name").asText()
             );
 
-            log.info("Weather Data: {}", weatherData.toString());
-
             try {
                 this.weatherDataService.saveWeatherData(weatherData);
             } catch (final Exception e) {
                 log.error("Failed to save weather data", e);
             }
-
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             log.error("Failed", e);
         }
-
-
-
     }
 
     @Override

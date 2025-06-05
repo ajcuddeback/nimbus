@@ -7,17 +7,7 @@ import org.springframework.context.ApplicationContext;
 
 @SpringBootApplication
 public final class WeatherapiApplication {
-
 	public static void main(final String[] args) {
-		final ApplicationContext context = SpringApplication.run(WeatherapiApplication.class, args);
-		
-		// Initialize MQTT connection
-		final MqttService mqttService = context.getBean(MqttService.class);
-		try {
-			mqttService.connect();
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
+		SpringApplication.run(WeatherapiApplication.class, args);
 	}
-
 }

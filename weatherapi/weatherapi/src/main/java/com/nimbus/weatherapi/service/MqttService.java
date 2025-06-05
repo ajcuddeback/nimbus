@@ -1,6 +1,5 @@
 package com.nimbus.weatherapi.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbus.weatherapi.utils.MqttSSLUtility;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -17,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 @Service
 public final class MqttService {
     private MqttClient mqttClient;
-    private final ObjectMapper objectMapper;
     private final WeatherDataService weatherDataService;
 
     @Value("${mqtt.broker.url}")
@@ -38,25 +36,25 @@ public final class MqttService {
     @Value("${mqtt.password}")
     private String password;
 
-    public MqttService(final WeatherDataService weatherDataService) throws MqttException {
+    @Value("${mqtt.qos}")
+    private Integer qos;
+
+    public MqttService(final WeatherDataService weatherDataService) {
         this.weatherDataService = weatherDataService;
-        this.objectMapper = new ObjectMapper();
     }
 
     @PostConstruct
     public void init() {
-        log.info("Initializing!");
         try {
             this.mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
-//            connect();
+            connect();
+            log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId());
         } catch (Exception e) {
             log.error("Failed during MQTT initialization", e);
         }
     }
 
     public void connect() throws MqttException {
-        log.info("Starting to connect...");
-
         MqttConnectionOptions connectionOptions = new MqttConnectionOptions();
         connectionOptions.setUserName(user);
         connectionOptions.setPassword(password.getBytes(StandardCharsets.UTF_8));
@@ -75,11 +73,7 @@ public final class MqttService {
 
         this.mqttClient.connect(connectionOptions);
 
-
-
-        log.info("Connected!");
-
-        this.mqttClient.subscribe(topic, 1);
+        this.mqttClient.subscribe(topic, qos);
     }
 
     @PreDestroy

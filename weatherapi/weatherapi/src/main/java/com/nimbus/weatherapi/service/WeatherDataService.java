@@ -16,10 +16,12 @@ public final class WeatherDataService {
     }
 
     public void saveWeatherData(final WeatherData weatherData) {
-        log.info("Saving the weather data...");
         weatherDataRepository.save(weatherData)
                 .doOnError(err -> {
                     log.error("Failed to save weather data", err);
+                })
+                .doOnSuccess(weatherDataResponse -> {
+                    log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
                 }).subscribe();
     }
 } 
