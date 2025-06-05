@@ -12,6 +12,9 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 @Slf4j
 public class WeatherDataCallback implements MqttCallback {
     private final WeatherDataService weatherDataService;
@@ -35,7 +38,7 @@ public class WeatherDataCallback implements MqttCallback {
                     jsonNode.get("pr").asDouble(),
                     jsonNode.get("pr_format").asText(),
                     jsonNode.get("timestamp").asLong(),
-                    new WeatherData.Coordinates(jsonNode.get("coordinates").get("long").asDouble(), jsonNode.get("coordinates").get("lat").asDouble()),
+                    new WeatherData.Location("Point", new ArrayList<>(Arrays.asList(jsonNode.get("coordinates").get("long").asDouble(), jsonNode.get("coordinates").get("lat").asDouble()))),
                     jsonNode.get("station_name").asText()
             );
 
