@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Service
 public final class MqttService {
-    private MqttClient mqttClient;
+    private MqttAsyncClient mqttClient;
     private final WeatherDataService weatherDataService;
 
     @Value("${mqtt.broker.url}")
@@ -46,8 +46,7 @@ public final class MqttService {
     @PostConstruct
     public void init() {
         try {
-            // TODO: Look into refactoring to async mqtt client - as everything else will end up using project reactor/async coding anyway
-            this.mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
+            this.mqttClient = new MqttAsyncClient(brokerUrl, clientId, new MemoryPersistence());
             connect();
             log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId());
         } catch (Exception e) {
@@ -72,10 +71,34 @@ public final class MqttService {
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
+        final MqttAsyncClient client = this.mqttClient;
 
-        this.mqttClient.connect(connectionOptions);
+        // TODO: Look into using Completable future to help with readability of this callback hell
+        this.mqttClient.connect(connectionOptions, null, new MqttActionListener() {
+            @Override
+            public void onSuccess(final IMqttToken iMqttToken) {
+                try {
+                    client.subscribe(topic, qos, null, new MqttActionListener() {
+                        @Override
+                        public void onSuccess(final IMqttToken token) {
+                            log.info("Subscribed to topic {} with qos {}", topic, qos);
+                        }
 
-        this.mqttClient.subscribe(topic, qos);
+                        @Override
+                        public void onFailure(final IMqttToken token, final Throwable exception) {
+                            log.error("Failed to subscribe to topic {} with qos {}. Error: {}", topic, qos, exception.getMessage());
+                        }
+                    });
+                } catch (final MqttException e) {
+                    log.error(e.getMessage());
+                }
+            }
+
+            @Override
+            public void onFailure(IMqttToken iMqttToken, Throwable exception) {
+                log.error("Failed to connect to MQTT client! Error: {}", exception.getMessage());
+            }
+        });
     }
 
     @PreDestroy
