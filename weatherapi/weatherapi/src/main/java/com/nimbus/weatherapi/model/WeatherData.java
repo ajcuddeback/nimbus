@@ -2,6 +2,7 @@ package com.nimbus.weatherapi.model;
 
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
@@ -30,14 +31,12 @@ public final class WeatherData {
     private final String prFormat;
     private final long timestamp;
     @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
-    private final Location location;
+    private final GeoJsonPoint location;
     private final String stationName;
-
-    public record Location(String type, List<Double> coordinates) {}
 
     public WeatherData(final double temp, final String tempFormat, final double hum,
                       final double pr, final String prFormat, final long timestamp,
-                      final Location location, final String stationName) {
+                      final GeoJsonPoint location, final String stationName) {
         this.temp = temp;
         this.tempFormat = tempFormat;
         this.hum = hum;
