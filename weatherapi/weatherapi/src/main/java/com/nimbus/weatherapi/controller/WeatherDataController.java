@@ -1,13 +1,18 @@
 package com.nimbus.weatherapi.controller;
 
+import com.nimbus.weatherapi.controller.responses.MissingRequiredParamException;
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.repository.WeatherDataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -25,33 +30,26 @@ public class WeatherDataController {
     }
 
     @GetMapping
-    public Flux<WeatherData> getWeatherData() {
-        return weatherDataRepository.findAll();
-    }
-
-    // TODO: Unsure if the way I did this is best practice. Paging with webflux isn't fully supported
-    // This may work, but we aren't getting the total results out in the response. Do some research on best practice here
-    @GetMapping("/{lon}/{lat}")
-    public Flux<WeatherData> getWeatherDataByLocation(
-            @PathVariable String lon,
-            @PathVariable String lat,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "timestamp") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
-
-        final Sort sort = Sort.by(sortDirection, sortBy);
+    public Mono<Page<WeatherData>> getWeatherDataByLocation(
+            @RequestParam String lon,
+            @RequestParam String lat,
+            @RequestParam(defaultValue = "1000") int maxDistance,
+            Pageable pageable) {
 
         return mongoTemplate
                 .query(WeatherData.class)
                 .matching(
                         query(where("location")
-                            .nearSphere(new Point(Double.parseDouble(lon), Double.parseDouble(lat)))
+                                .nearSphere(new Point(Double.parseDouble(lon), Double.parseDouble(lat)))
+                                .maxDistance(maxDistance / 6378100.0)
                         )
-                            .with(sort)
-                            .skip((long) page * size)
-                            .limit(size)
+                                .with(pageable.getSort())
+                                .skip((long) pageable.getPageNumber() * pageable.getPageSize())
+                                .limit(pageable.getPageSize())
                 )
-                .all();
+                .all()
+                .collectList()
+                .zipWith(this.weatherDataRepository.count())
+                .map(p -> new PageImpl<>(p.getT1(), pageable, p.getT2()));
     }
 }
