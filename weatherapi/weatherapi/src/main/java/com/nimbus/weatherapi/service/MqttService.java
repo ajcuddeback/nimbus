@@ -9,8 +9,11 @@ import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -48,14 +51,12 @@ public final class MqttService {
         try {
             this.mqttClient = new MqttAsyncClient(brokerUrl, clientId, new MemoryPersistence());
             connect();
-            log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId());
         } catch (Exception e) {
             log.error("Failed during MQTT initialization", e);
         }
     }
 
     public void connect() throws MqttException {
-        // TODO: Look into these connection options and test connection outages - ensure we can still pick up missed messages
         MqttConnectionOptions connectionOptions = new MqttConnectionOptions();
         connectionOptions.setUserName(user);
         connectionOptions.setPassword(password.getBytes(StandardCharsets.UTF_8));
@@ -71,32 +72,41 @@ public final class MqttService {
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
-        final MqttAsyncClient client = this.mqttClient;
 
-        // TODO: Look into using Completable future to help with readability of this callback hell
-        this.mqttClient.connect(connectionOptions, null, new MqttActionListener() {
-            @Override
-            public void onSuccess(final IMqttToken iMqttToken) {
-                try {
-                    client.subscribe(topic, qos, null, new MqttActionListener() {
-                        @Override
-                        public void onSuccess(final IMqttToken token) {
-                            log.info("Subscribed to topic {} with qos {}", topic, qos);
-                        }
+        this.connectUntilSuccessful(this.mqttClient, connectionOptions)
+                .doOnError(e -> log.error("Failed to connect to MQTT Server with error {}", e.getMessage()))
+                .doOnSuccess(ignored -> log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId()))
+                .subscribe();
+    }
 
-                        @Override
-                        public void onFailure(final IMqttToken token, final Throwable exception) {
-                            log.error("Failed to subscribe to topic {} with qos {}. Error: {}", topic, qos, exception.getMessage());
-                        }
-                    });
-                } catch (final MqttException e) {
-                    log.error(e.getMessage());
-                }
+    private Mono<Boolean> connectUntilSuccessful(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
+        return Mono.defer(() -> connectAsync(client, connectionOptions)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))));
+    }
+
+    private Mono<Boolean> connectAsync(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
+        return Mono.create(sink -> {
+            if (client.isConnected()) {
+                sink.success(true);
+                return;
             }
 
-            @Override
-            public void onFailure(IMqttToken iMqttToken, Throwable exception) {
-                log.error("Failed to connect to MQTT client! Error: {}", exception.getMessage());
+            try {
+                this.mqttClient.connect(connectionOptions, null, new MqttActionListener() {
+                    @Override
+                    public void onSuccess(final IMqttToken iMqttToken) {
+                        sink.success(true);
+                    }
+
+                    @Override
+                    public void onFailure(final IMqttToken iMqttToken, final Throwable exception) {
+                        log.error("Failed to connect to MQTT client! Error: {}", exception.getMessage());
+                        sink.error(exception);
+                    }
+                });
+            } catch (final MqttException e) {
+                log.error("Failed to establish MQTT connection! Error: {}", e.getMessage());
+                sink.error(e);
             }
         });
     }
@@ -105,8 +115,17 @@ public final class MqttService {
     public void disconnect() throws MqttException {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
-                mqttClient.disconnect();
-                log.info("Disconnected from MQTT broker cleanly");
+                mqttClient.disconnect(null, new MqttActionListener() {
+                    @Override
+                    public void onSuccess(final IMqttToken iMqttToken) {
+                        log.info("Disconnected from MQTT broker cleanly");
+                    }
+
+                    @Override
+                    public void onFailure(final IMqttToken iMqttToken, final Throwable exception) {
+                        log.error("Error during MQTT disconnect", exception);
+                    }
+                });
             }
         } catch (MqttException e) {
             log.warn("Error during MQTT disconnect", e);

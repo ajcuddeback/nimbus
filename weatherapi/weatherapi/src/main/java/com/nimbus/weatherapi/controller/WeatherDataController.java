@@ -1,17 +1,14 @@
 package com.nimbus.weatherapi.controller;
 
-import com.nimbus.weatherapi.controller.responses.MissingRequiredParamException;
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.repository.WeatherDataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -37,7 +34,7 @@ public class WeatherDataController {
             Pageable pageable) {
 
         return mongoTemplate
-                .query(WeatherData.class)
+              .query(WeatherData.class)
                 .matching(
                         query(where("location")
                                 .nearSphere(new Point(Double.parseDouble(lon), Double.parseDouble(lat)))
