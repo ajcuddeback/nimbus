@@ -73,21 +73,17 @@ public final class MqttService {
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
 
-        this.connectUntilSuccessful(this.mqttClient, connectionOptions)
+        this.connectAsync(this.mqttClient, connectionOptions)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
                 .doOnError(e -> log.error("Failed to connect to MQTT Server with error {}", e.getMessage()))
                 .doOnSuccess(ignored -> log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId()))
                 .subscribe();
     }
 
-    private Mono<Boolean> connectUntilSuccessful(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
-        return Mono.defer(() -> connectAsync(client, connectionOptions)
-                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))));
-    }
-
-    private Mono<Boolean> connectAsync(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
+    private Mono<Void> connectAsync(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
         return Mono.create(sink -> {
             if (client.isConnected()) {
-                sink.success(true);
+                sink.success();
                 return;
             }
 
@@ -95,7 +91,7 @@ public final class MqttService {
                 this.mqttClient.connect(connectionOptions, null, new MqttActionListener() {
                     @Override
                     public void onSuccess(final IMqttToken iMqttToken) {
-                        sink.success(true);
+                        sink.success();
                     }
 
                     @Override
