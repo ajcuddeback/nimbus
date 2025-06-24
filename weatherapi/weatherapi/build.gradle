@@ -19,7 +19,7 @@ repositories {
 		url "https://repo.eclipse.org/content/repositories/paho-releases/"
 	}
 	maven {
-		url "https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on"
+		url "https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on"
 	}
 }
 
@@ -28,7 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5'
-	implementation 'org.bouncycastle:bcprov-jdk15on:1.64'
+	implementation 'org.bouncycastle:bcprov-jdk18on:1.81'
 	compileOnly("org.projectlombok:lombok:1.18.38")
 	annotationProcessor("org.projectlombok:lombok:1.18.38")
 	testCompileOnly("org.projectlombok:lombok:1.18.38")

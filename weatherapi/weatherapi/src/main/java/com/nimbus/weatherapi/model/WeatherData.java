@@ -1,6 +1,7 @@
 package com.nimbus.weatherapi.model;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -8,8 +9,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
 
 @Getter
 @Document(collection = "weather_data")
@@ -20,7 +19,7 @@ import java.util.List;
                 def = "{'stationName': 1, 'timestamp': 1}"
         )
 )
-
+@ToString
 public final class WeatherData {
     @Id
     private String id;

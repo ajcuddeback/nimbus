@@ -15,7 +15,6 @@ import java.security.cert.X509Certificate;
 public class MqttSSLUtility {
     // one-way ssl/tls
     public static SSLSocketFactory getSingleSocketFactory(final String caCrtFile) throws Exception {
-        // TODO: There are vulnerabilities in BouncyCastle. Look and see if there is a newer version or a different provider
         Security.addProvider(new BouncyCastleProvider());
         X509Certificate caCert = null;
 
