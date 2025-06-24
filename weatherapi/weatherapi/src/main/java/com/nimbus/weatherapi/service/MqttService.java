@@ -73,16 +73,20 @@ public final class MqttService {
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
 
-        this.connectAsync(this.mqttClient, connectionOptions)
+        Mono.defer(() ->
+                        this.connectAsync(connectionOptions)
+                                .doOnSuccess(v -> log.info("Connected to MQTT"))
+                                .then(this.subscribeAsync()
+                                        .doOnSuccess(x -> log.info("Subscribed to topic {}", topic))
+                                )
+                ).doOnError(e -> log.error("Error in MQTT setup: {}", e.getMessage()))
                 .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
-                .doOnError(e -> log.error("Failed to connect to MQTT Server with error {}", e.getMessage()))
-                .doOnSuccess(ignored -> log.info("Successfully connected to MQTT Server with client id {}", this.mqttClient.getClientId()))
                 .subscribe();
     }
 
-    private Mono<Void> connectAsync(final MqttAsyncClient client, final MqttConnectionOptions connectionOptions) {
+    private Mono<Void> connectAsync(final MqttConnectionOptions connectionOptions) {
         return Mono.create(sink -> {
-            if (client.isConnected()) {
+            if (this.mqttClient.isConnected()) {
                 sink.success();
                 return;
             }
@@ -102,6 +106,29 @@ public final class MqttService {
                 });
             } catch (final MqttException e) {
                 log.error("Failed to establish MQTT connection! Error: {}", e.getMessage());
+                sink.error(e);
+            }
+        });
+    }
+
+    private Mono<Void> subscribeAsync() {
+        return Mono.create(sink -> {
+            try {
+                this.mqttClient.subscribe(topic, qos, null, new MqttActionListener() {
+                    @Override
+                    public void onSuccess(final IMqttToken token) {
+                        log.info("Subscribed to topic {} with qos {}", topic, qos);
+                        sink.success();
+                    }
+
+                    @Override
+                    public void onFailure(final IMqttToken token, final Throwable exception) {
+                        log.error("Failed to subscribe to topic {} with qos {}. Error: {}", topic, qos, exception.getMessage());
+                        sink.error(exception);
+                    }
+                });
+            } catch (final MqttException e) {
+                log.error(e.getMessage());
                 sink.error(e);
             }
         });
