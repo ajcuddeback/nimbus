@@ -58,6 +58,10 @@ public final class WeatherDataService {
         double lonValue = Double.parseDouble(lon);
         double latValue = Double.parseDouble(lat);
 
+        // TODO: The way I've done this is slowww and memory intensive
+        // TODO: Fix this so that we get weather stations near you for the current date
+        // TODO: Each weather station should be sending data hourly... So, I'll be guaranteed to find something near you
+        // TODO: Look into selecting distinct names maybe as part of a query instead of using an aggregation
         final NearQuery nearQuery = NearQuery.near(new Point(lonValue, latValue))
                 .maxDistance(maxDistance / earthRadiusInMeters)
                 .spherical(true);
