@@ -1,5 +1,6 @@
 package com.nimbus.weatherapi.model;
 
+
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
@@ -11,35 +12,28 @@ import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
-@Document(collection = "weather_data")
+@Document(collection = "weather_stations")
 @CompoundIndexes(
         @CompoundIndex(
-                name = "station_timestamp_unique",
+                name = "station_name_station_id_unique",
                 unique = true,
-                def = "{'stationName': 1, 'timestamp': 1}"
+                def = "{'stationName': 1, 'stationId': 1}"
         )
 )
 @ToString
-public final class WeatherData {
+public final class WeatherStations {
     @Id
     private String id;
-    private final double temp;
-    private final String tempFormat;
-    private final double hum;
-    private final double pr;
-    private final String prFormat;
-    private final long timestamp;
+    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
+    private final GeoJsonPoint location;
     private final String stationName;
+    private final String stationId;
 
-    public WeatherData(final double temp, final String tempFormat, final double hum,
-                      final double pr, final String prFormat, final long timestamp, final String stationName) {
-        this.temp = temp;
-        this.tempFormat = tempFormat;
-        this.hum = hum;
-        this.pr = pr;
-        this.prFormat = prFormat;
-        this.timestamp = timestamp;
+    public WeatherStations(final GeoJsonPoint location, final String stationName, final String stationId) {
+
+        this.location = location;
         this.stationName = stationName;
+        this.stationId = stationId;
     }
 
 }

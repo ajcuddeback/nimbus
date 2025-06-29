@@ -20,6 +20,7 @@ import java.time.Duration;
 public final class MqttService {
     private MqttAsyncClient mqttClient;
     private final WeatherDataService weatherDataService;
+    private final StationRegistrationService stationRegistrationService;
 
     @Value("${mqtt.broker.url}")
     private String brokerUrl;
@@ -42,8 +43,12 @@ public final class MqttService {
     @Value("${mqtt.qos}")
     private Integer qos;
 
-    public MqttService(final WeatherDataService weatherDataService) {
+    public MqttService(
+            final WeatherDataService weatherDataService,
+            final StationRegistrationService stationRegistrationService
+    ) {
         this.weatherDataService = weatherDataService;
+        this.stationRegistrationService = stationRegistrationService;
     }
 
     @PostConstruct
@@ -68,7 +73,7 @@ public final class MqttService {
             throw new RuntimeException(e);
         }
 
-        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService));
+        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService, stationRegistrationService));
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
@@ -132,6 +137,11 @@ public final class MqttService {
                 sink.error(e);
             }
         });
+    }
+
+    public void publishEvent(final String topic, final byte[] message) throws MqttException {
+        log.info("Publishing Event to {}", topic);
+        this.mqttClient.publish(topic, message, qos, false);
     }
 
     @PreDestroy
