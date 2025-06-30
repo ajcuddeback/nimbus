@@ -59,6 +59,16 @@ public class StationRegistrationService {
                     }
 
                     return Mono.just(true);
+                })
+                .doOnSuccess(hasStation -> {
+                    if (hasStation) {
+                        log.info("Found station already, publishing event via MQTT");
+                        try {
+                            mqttService.publishEvent("stationId", stationId.getBytes(StandardCharsets.UTF_8));
+                        } catch (MqttException e) {
+                            log.error("Failed to publish station id to station", e);
+                        }
+                    }
                 });
     }
 

@@ -67,7 +67,6 @@ public class WeatherDataCallback implements MqttCallback {
                         jsonNode.get("lat").asDouble()
                 ).flatMap(stationExists -> {
                    if (!stationExists) {
-                       // TODO: Need to publish stationId to mqtt
                        return Mono.empty();
                    }
 
