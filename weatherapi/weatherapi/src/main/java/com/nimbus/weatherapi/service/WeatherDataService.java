@@ -45,13 +45,13 @@ public final class WeatherDataService {
     }
 
     public Mono<Page<WeatherData>> getWeatherDataByLocation(
-            final String locationName,
+            final String stationId,
             final Pageable pageable
             ) {
         return mongoTemplate
                 .query(WeatherData.class)
                 .matching(
-                        query(where("stationName").is(locationName))
+                        query(where("stationId").is(stationId))
                                 .with(pageable.getSort())
                                 .skip((long) pageable.getPageNumber() * pageable.getPageSize())
                                 .limit(pageable.getPageSize())

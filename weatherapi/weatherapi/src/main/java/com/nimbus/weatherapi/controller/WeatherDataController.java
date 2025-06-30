@@ -18,10 +18,9 @@ public class WeatherDataController {
 
     @GetMapping
     public Mono<Page<WeatherData>> getWeatherDataByLocation(
-            // TODO: Change to station id
-            @RequestParam String stationName,
+            @RequestParam String stationId,
             Pageable pageable
     ) {
-        return weatherDataService.getWeatherDataByLocation(stationName, pageable);
+        return weatherDataService.getWeatherDataByLocation(stationId, pageable);
     }
 }

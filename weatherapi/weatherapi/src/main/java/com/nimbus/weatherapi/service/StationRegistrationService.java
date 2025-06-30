@@ -4,10 +4,8 @@ import com.nimbus.weatherapi.model.WeatherStations;
 import com.nimbus.weatherapi.repository.WeatherStationsDataRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.common.MqttException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;

@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
         @CompoundIndex(
                 name = "station_timestamp_unique",
                 unique = true,
-                def = "{'stationName': 1, 'timestamp': 1}"
+                def = "{'stationId': 1, 'timestamp': 1}"
         )
 )
 @ToString
@@ -29,17 +29,17 @@ public final class WeatherData {
     private final double pr;
     private final String prFormat;
     private final long timestamp;
-    private final String stationName;
+    private final String stationId;
 
     public WeatherData(final double temp, final String tempFormat, final double hum,
-                      final double pr, final String prFormat, final long timestamp, final String stationName) {
+                      final double pr, final String prFormat, final long timestamp, final String stationId) {
         this.temp = temp;
         this.tempFormat = tempFormat;
         this.hum = hum;
         this.pr = pr;
         this.prFormat = prFormat;
         this.timestamp = timestamp;
-        this.stationName = stationName;
+        this.stationId = stationId;
     }
 
 }
