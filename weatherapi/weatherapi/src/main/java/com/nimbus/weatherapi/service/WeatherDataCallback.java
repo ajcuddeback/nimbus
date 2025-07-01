@@ -13,20 +13,24 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 @Slf4j
 public class WeatherDataCallback implements MqttCallback {
     private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
+    private final MqttService mqttService;
 
     public WeatherDataCallback(
             WeatherDataService weatherDataService,
-            StationRegistrationService stationRegistrationService
+            StationRegistrationService stationRegistrationService,
+            MqttService mqttService
     ) {
         super();
         this.weatherDataService = weatherDataService;
         this.stationRegistrationService = stationRegistrationService;
+        this.mqttService = mqttService;
     }
 
     @Override
@@ -60,22 +64,18 @@ public class WeatherDataCallback implements MqttCallback {
             try {
                 final JsonNode jsonNode = mapper.readTree(new String(message.getPayload()));
 
-                this.stationRegistrationService.weatherStationExists(
+                this.stationRegistrationService.registerWeatherStation(
                         jsonNode.get("city").asText(),
                         jsonNode.get("state").asText(),
                         jsonNode.get("lon").asDouble(),
                         jsonNode.get("lat").asDouble()
-                ).flatMap(stationExists -> {
-                   if (!stationExists) {
-                       return Mono.empty();
-                   }
-
-                   return stationRegistrationService.registerWeatherStation(
-                           jsonNode.get("city").asText(),
-                           jsonNode.get("state").asText(),
-                           jsonNode.get("lon").asDouble(),
-                           jsonNode.get("lat").asDouble()
-                   );
+                ).flatMap(data ->{
+                    try {
+                        this.mqttService.publishEvent("stationId", data.getBytes(StandardCharsets.UTF_8));
+                    } catch (MqttException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return Mono.empty();
                 }).subscribe();
             } catch (final JsonProcessingException e) {
                 log.error("Failed", e);

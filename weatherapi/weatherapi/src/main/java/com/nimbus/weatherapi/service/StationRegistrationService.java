@@ -3,26 +3,20 @@ package com.nimbus.weatherapi.service;
 import com.nimbus.weatherapi.model.WeatherStations;
 import com.nimbus.weatherapi.repository.WeatherStationsDataRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.paho.mqttv5.common.MqttException;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 @Slf4j
 @Service
 public class StationRegistrationService {
-    private final MqttService mqttService;
     private final WeatherStationsDataRepository weatherStationsDataRepository;
 
     StationRegistrationService(
-            MqttService mqttService,
             WeatherStationsDataRepository weatherStationsDataRepository
     ) {
-        this.mqttService = mqttService;
         this.weatherStationsDataRepository = weatherStationsDataRepository;
     }
 
@@ -43,14 +37,7 @@ public class StationRegistrationService {
         return sb.toString();
     }
 
-    public Mono<Boolean> weatherStationExists(
-            final String city,
-            final String state,
-            final double lon,
-            final double lat
-    ) throws NoSuchAlgorithmException {
-        final String stationId = generateStationId(city, state, lon, lat);
-
+    public Mono<Boolean> weatherStationExists(final String stationId) {
         return weatherStationsDataRepository.findByStationId(stationId)
                 .collectList()
                 .flatMap(weatherStations -> {
@@ -63,21 +50,16 @@ public class StationRegistrationService {
                 .doOnSuccess(hasStation -> {
                     if (hasStation) {
                         log.info("Found station already, publishing event via MQTT");
-                        try {
-                            mqttService.publishEvent("stationId", stationId.getBytes(StandardCharsets.UTF_8));
-                        } catch (MqttException e) {
-                            log.error("Failed to publish station id to station", e);
-                        }
                     }
                 });
     }
 
-    public Mono<WeatherStations> registerWeatherStation(
+    public Mono<String> registerWeatherStation(
             final String city,
             final String state,
             final double lon,
             final double lat
-    ){
+    ) throws NoSuchAlgorithmException {
         String stationId;
         try {
             stationId = generateStationId(city, state, lon, lat);
@@ -86,23 +68,24 @@ public class StationRegistrationService {
             return Mono.error(e);
         }
 
-        final WeatherStations weatherStations = new WeatherStations(
-                new GeoJsonPoint(lon, lat),
-                city + ", " + state,
-                stationId
-        );
+        return this.weatherStationExists(stationId).flatMap(stationExists -> {
+            if (!stationExists) {
+                return Mono.just(stationId);
+            }
+            final WeatherStations weatherStations = new WeatherStations(
+                    new GeoJsonPoint(lon, lat),
+                    city + ", " + state,
+                    stationId
+            );
 
-        return weatherStationsDataRepository.save(weatherStations)
-                .doOnSuccess(weatherStationResponse -> {
-                    try {
+            return weatherStationsDataRepository.save(weatherStations)
+                    .doOnSuccess(weatherStationResponse -> {
                         log.info("Successfully created weather station, publishing event via MQTT");
-                        mqttService.publishEvent("stationId", stationId.getBytes(StandardCharsets.UTF_8));
-                    } catch (final MqttException e) {
-                        log.error("Failed to publish station id to station", e);
-                    }
-                })
-                .doOnError(error -> {
-                    log.error("Failed to save weather station! Error: {}", error.getMessage());
-                });
+                    })
+                    .doOnError(error -> {
+                        log.error("Failed to save weather station! Error: {}", error.getMessage());
+                    })
+                    .flatMap(ignored -> Mono.just(stationId));
+        });
     }
 }
