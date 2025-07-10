@@ -9,11 +9,13 @@ import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -28,8 +30,8 @@ public final class MqttService {
     @Value("${mqtt.client.id}")
     private String clientId;
 
-    @Value("${mqtt.topic}")
-    private String topic;
+    @Value("${mqtt.topics}")
+    private ArrayList<String> topics;
 
     @Value("${mqtt.ssl.location}")
     private String sslLocation;
@@ -78,14 +80,26 @@ public final class MqttService {
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
 
-        Mono.defer(() ->
-                        this.connectAsync(connectionOptions)
-                                .doOnSuccess(v -> log.info("Connected to MQTT"))
-                                .then(this.subscribeAsync()
-                                        .doOnSuccess(x -> log.info("Subscribed to topic {}", topic))
-                                )
-                ).doOnError(e -> log.error("Error in MQTT setup: {}", e.getMessage()))
-                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
+        Flux.defer(() -> {
+                    log.info("Starting MQTT connection and subscription flow");
+
+                    return this.connectAsync(connectionOptions)
+                            .doOnSuccess(v -> log.info("Connected to MQTT"))
+                            // Use thenMany to start subscription Flux after connection completes, ignoring 'v'
+                            .thenMany(
+                                    Flux.fromIterable(topics)
+                                            .doOnNext(t -> log.info("Attempting to subscribe to topic: {}", t))
+                                            .flatMap(topic ->
+                                                    this.subscribeAsync(topic)
+                                                            .doOnSuccess(vv -> log.info("Subscribed to topic: {}", topic))
+                                                            .doOnError(e -> log.error("Failed to subscribe to {}: {}", topic, e.getMessage(), e))
+                                                            .onErrorResume(e -> Mono.empty()) // continue despite errors
+                                            )
+                            );
+                })
+                .doOnSubscribe(sub -> log.info("MQTT setup: Subscribed to reactive chain"))
+                .doOnError(e -> log.error("Error in MQTT setup: {}", e.getMessage(), e))
+                .doFinally(signal -> log.info("MQTT flow finished with signal: {}", signal))
                 .subscribe();
     }
 
@@ -116,19 +130,19 @@ public final class MqttService {
         });
     }
 
-    private Mono<Void> subscribeAsync() {
+    private Mono<Void> subscribeAsync(final String topicToSub) {
         return Mono.create(sink -> {
             try {
-                this.mqttClient.subscribe(topic, qos, null, new MqttActionListener() {
+                this.mqttClient.subscribe(topicToSub, qos, null, new MqttActionListener() {
                     @Override
                     public void onSuccess(final IMqttToken token) {
-                        log.info("Subscribed to topic {} with qos {}", topic, qos);
+                        log.info("Subscribed to topic {} with qos {}", topicToSub, qos);
                         sink.success();
                     }
 
                     @Override
                     public void onFailure(final IMqttToken token, final Throwable exception) {
-                        log.error("Failed to subscribe to topic {} with qos {}. Error: {}", topic, qos, exception.getMessage());
+                        log.error("Failed to subscribe to topic {} with qos {}. Error: {}", topicToSub, qos, exception.getMessage());
                         sink.error(exception);
                     }
                 });
@@ -141,7 +155,7 @@ public final class MqttService {
 
     public void publishEvent(final String topic, final byte[] message) throws MqttException {
         log.info("Publishing Event to {}", topic);
-        this.mqttClient.publish(topic, message, qos, false);
+        this.mqttClient.publish(topic, message, qos, true);
     }
 
     @PreDestroy

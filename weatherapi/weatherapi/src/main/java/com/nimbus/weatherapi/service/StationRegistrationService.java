@@ -69,7 +69,7 @@ public class StationRegistrationService {
         }
 
         return this.weatherStationExists(stationId).flatMap(stationExists -> {
-            if (!stationExists) {
+            if (stationExists) {
                 return Mono.just(stationId);
             }
             final WeatherStations weatherStations = new WeatherStations(

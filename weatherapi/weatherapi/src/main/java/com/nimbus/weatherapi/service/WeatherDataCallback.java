@@ -48,7 +48,7 @@ public class WeatherDataCallback implements MqttCallback {
                         jsonNode.get("pr").asDouble(),
                         jsonNode.get("pr_format").asText(),
                         jsonNode.get("timestamp").asLong(),
-                        jsonNode.get("station_name").asText()
+                        jsonNode.get("stationId").asText()
                 );
 
                 try {
