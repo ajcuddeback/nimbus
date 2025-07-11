@@ -1,6 +1,7 @@
 package com.nimbus.weatherapi.controller;
 
 import com.nimbus.weatherapi.model.WeatherData;
+import com.nimbus.weatherapi.model.WeatherStations;
 import com.nimbus.weatherapi.service.WeatherStationsService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ public class WeatherStationsController {
 
 
     @GetMapping
-    public Mono<Page<WeatherData>> getWeatherDataByLocation(
+    public Mono<Page<WeatherStations>> getWeatherStationsByLocation(
             @RequestParam Double lon,
             @RequestParam Double lat,
             @RequestParam(defaultValue = "1000") Double maxDistance,

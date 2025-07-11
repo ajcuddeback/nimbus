@@ -25,7 +25,7 @@ public class WeatherStationsService {
         this.weatherStationsDataRepository = weatherStationsDataRepository;
     }
 
-    public Mono<Page<WeatherData>> getWeatherStationsByLocation(
+    public Mono<Page<WeatherStations>> getWeatherStationsByLocation(
             final Double lon,
             final Double lat,
             final Double maxDistance,
@@ -33,7 +33,7 @@ public class WeatherStationsService {
     ) {
         final double earthRadiusInMeters = 6378100.0;
         return mongoTemplate
-                .query(WeatherData.class)
+                .query(WeatherStations.class)
                 .matching(
                         query(where("location").nearSphere(new Point(lon, lat)).maxDistance(maxDistance / earthRadiusInMeters))
                                 .with(pageable.getSort())
