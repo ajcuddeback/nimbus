@@ -9,8 +9,6 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/weatherData")
-// TODO: Change this to be more maintanable, maybe env variable
-@CrossOrigin(origins = "http://localhost:4200")
 public class WeatherDataController {
     private final WeatherDataService weatherDataService;
 

@@ -13,8 +13,7 @@ export class WeatherStationsService {
   constructor(
     private http: HttpClient,
   ) {
-    // TODO: This must come from some kind of config.. Probably not hard coded..
-    this.backendEndpoint ='http://localhost:8080';
+    this.backendEndpoint = import.meta.env.WEATHER_API_ENDPOINT ? import.meta.env.WEATHER_API_ENDPOINT : 'http://localhost:8080';
   }
 
 

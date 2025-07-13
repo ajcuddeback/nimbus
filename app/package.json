@@ -21,6 +21,7 @@
     "@angular/platform-server": "^20.0.4",
     "@angular/router": "^20.0.4",
     "@angular/ssr": "^20.0.3",
+    "@ngx-env/builder": "^19.1.0",
     "@primeuix/themes": "^1.2.1",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",

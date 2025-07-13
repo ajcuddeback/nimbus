@@ -1,8 +1,8 @@
 import {Component, Inject, OnDestroy, OnInit, PLATFORM_ID} from '@angular/core';
 import {WeatherDataService} from '../../services/weather-data.service';
 import {WeatherData} from '../../models/weather-data.interface';
-import {isPlatformBrowser, JsonPipe} from '@angular/common';
-import {interval, Subscription, switchMap} from 'rxjs';
+import {isPlatformBrowser} from '@angular/common';
+import {Subscription, switchMap, timer} from 'rxjs';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
 
@@ -15,12 +15,12 @@ import {CardModule} from 'primeng/card';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnDestroy {
   isLoading = true;
   hasError = false;
   weatherData: WeatherData;
   private subscription: Subscription | undefined;
-  tempFormat: "f" | "c" = "c";
+  tempFormat: "f" | "c" = "f";
   formattedTemp: string;
 
   constructor(
@@ -28,7 +28,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     if (isPlatformBrowser(this.platformId)) {
-      this.subscription = interval(1000).pipe(switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")))
+      this.subscription = timer(0, 60000).pipe(switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")))
         .subscribe({
           next: data => {
             this.isLoading = false;
@@ -45,28 +45,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit(): void {
-    this.getWeatherData();
-  }
-
   ngOnDestroy(): void {
     this.subscription?.unsubscribe();
-  }
-
-  getWeatherData() {
-    this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01").subscribe({
-      next: data => {
-        this.isLoading = false;
-        this.hasError = false;
-        this.weatherData = data;
-        this.formatTemp();
-      },
-      error: error => {
-        this.isLoading = false;
-        this.hasError = true;
-        console.error(error);
-      }
-    })
   }
 
   onTempFormatChange() {
