@@ -3,5 +3,27 @@
 } @else if (hasError) {
   <div>Errored!</div>
 } @else {
-  Weather Data: {{ weatherData | json }}
+  <div class="dashboard-grid">
+    <p-card header="Temperature">
+      <p-button [label]="tempFormat === 'c' ? 'F' : 'C'" (onClick)="onTempFormatChange()" />
+      {{ formattedTemp }}
+    </p-card>
+    <p-card header="Humidity">
+      {{ weatherData.hum.toFixed(0) }}%
+    </p-card>
+    <p-card header="Pressure">
+      {{ weatherData.pr.toFixed(0) }} {{ weatherData.prFormat }}
+    </p-card>
+    <p-card header="Wind Speed">
+      {{ weatherData.windSpeed.toFixed(0) }} {{ weatherData.windSpeedFormat }}
+    </p-card>
+    <p-card header="Wind Direction">
+      {{ weatherData.windDirection }}
+    </p-card>
+    <p-card header="Rainfall Total">
+      {{ weatherData.rainfall.toFixed(0) }} {{ weatherData.rainfallFormat }}
+    </p-card>
+  </div>
 }
+
+
