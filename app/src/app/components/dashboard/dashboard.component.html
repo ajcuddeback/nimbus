@@ -1,0 +1,7 @@
+@if (isLoading) {
+  <div>Loading....</div>
+} @else if (hasError) {
+  <div>Errored!</div>
+} @else {
+  Weather Data: {{ weatherData | json }}
+}

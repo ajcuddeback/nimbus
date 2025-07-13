@@ -9,6 +9,8 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/weatherData")
+// TODO: Change this to be more maintanable, maybe env variable
+@CrossOrigin(origins = "http://localhost:4200")
 public class WeatherDataController {
     private final WeatherDataService weatherDataService;
 
@@ -22,5 +24,12 @@ public class WeatherDataController {
             Pageable pageable
     ) {
         return weatherDataService.getWeatherDataByLocation(stationId, pageable);
+    }
+
+    @GetMapping("/current")
+    public Mono<WeatherData> getLatestWeatherData(
+            @RequestParam String stationId
+    ) {
+        return weatherDataService.getLatestWeatherData(stationId);
     }
 }

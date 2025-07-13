@@ -12,13 +12,17 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Document(collection = "weather_data")
-@CompoundIndexes(
+@CompoundIndexes({
         @CompoundIndex(
                 name = "station_timestamp_unique",
                 unique = true,
                 def = "{'stationId': 1, 'timestamp': 1}"
+        ),
+        @CompoundIndex(
+                name = "station_timestamp_desc_idx",
+                def = "{'stationId': 1, 'timestamp': -1}"
         )
-)
+})
 @ToString
 public final class WeatherData {
     @Id

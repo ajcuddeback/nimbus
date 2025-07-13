@@ -8,6 +8,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -60,5 +61,16 @@ public final class WeatherDataService {
                 .collectList()
                 .zipWith(this.weatherDataRepository.count())
                 .map(p -> new PageImpl<>(p.getT1(), pageable, p.getT2()));
+    }
+
+    public Mono<WeatherData> getLatestWeatherData(
+            final String stationId
+    ) {
+        return mongoTemplate
+                .query(WeatherData.class)
+                .matching(
+                        query(where("stationId").is(stationId)).with(Sort.by("timestamp").descending())
+                )
+                .first();
     }
 } 
