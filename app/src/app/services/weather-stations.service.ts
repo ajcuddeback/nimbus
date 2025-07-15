@@ -3,6 +3,7 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {Pageable} from '../models/pageable.interface';
 import {WeatherStation} from '../models/weather-stations.interface';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class WeatherStationsService {
   constructor(
     private http: HttpClient,
   ) {
-    this.backendEndpoint = import.meta.env.WEATHER_API_ENDPOINT ? import.meta.env.WEATHER_API_ENDPOINT : 'http://localhost:8080';
+    this.backendEndpoint = environment.WEATHER_API_ENDPOINT;
   }
 
 
