@@ -18,15 +18,11 @@ public class LightningService {
     public void saveLightning(final Lightning lightning) {
         lightningRepository.save(lightning)
                 .subscribe(
-                        weatherDataResponse -> {
-                            log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
+                        lightningResponse -> {
+                            log.info("Successfully created lighting data entry with id {}", lightningResponse.getId());
                         },
                         err -> {
-                            if (err instanceof DuplicateKeyException) {
-                                log.warn("Failed to save weather data. Unique constraint failed for {}", lightning);
-                                return;
-                            }
-                            log.error("Failed to save weather data", err);
+                            log.error("Failed to save lightning data", err);
                         }
                 );    }
 }
