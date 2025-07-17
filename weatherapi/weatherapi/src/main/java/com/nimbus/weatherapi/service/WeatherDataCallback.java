@@ -3,6 +3,7 @@ package com.nimbus.weatherapi.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbus.weatherapi.model.Lightning;
 import com.nimbus.weatherapi.model.WeatherData;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
@@ -21,16 +22,19 @@ public class WeatherDataCallback implements MqttCallback {
     private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
     private final MqttService mqttService;
+    private final LightningService lightningService;
 
     public WeatherDataCallback(
             WeatherDataService weatherDataService,
             StationRegistrationService stationRegistrationService,
-            MqttService mqttService
+            MqttService mqttService,
+            LightningService lightningService
     ) {
         super();
         this.weatherDataService = weatherDataService;
         this.stationRegistrationService = stationRegistrationService;
         this.mqttService = mqttService;
+        this.lightningService = lightningService;
     }
 
     @Override
@@ -87,6 +91,28 @@ public class WeatherDataCallback implements MqttCallback {
             } catch (final NoSuchAlgorithmException e) {
                 log.error("Failed", e);
                 throw new RuntimeException(e);
+            }
+        } else if (topic.equalsIgnoreCase("weather/lightning")) {
+            log.info("Lightning was detected!: \n  topic：{}\n  Qos：{}\n  payload：{}", topic, message.getQos(), new String(message.getPayload()));
+
+            final ObjectMapper mapper = new ObjectMapper();
+            try {
+                final JsonNode jsonNode = mapper.readTree(new String(message.getPayload()));
+                final Lightning lightning = new Lightning(
+                        jsonNode.get("distance").asInt(),
+                        jsonNode.get("distanceFormat").asText(),
+                        jsonNode.get("intensity").asInt(),
+                        jsonNode.get("stationId").asText(),
+                        jsonNode.get("timestamp").asLong()
+                );
+
+                try {
+                    this.lightningService.saveLightning(lightning);
+                } catch (final Exception e) {
+                    log.error("Failed to save weather data", e);
+                }
+            } catch (final JsonProcessingException e) {
+                log.error("Failed", e);
             }
         }
     }

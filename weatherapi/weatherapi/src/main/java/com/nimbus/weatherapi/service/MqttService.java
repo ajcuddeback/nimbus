@@ -23,6 +23,7 @@ public final class MqttService {
     private MqttAsyncClient mqttClient;
     private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
+    private final LightningService lightningService;
 
     @Value("${mqtt.broker.url}")
     private String brokerUrl;
@@ -47,10 +48,12 @@ public final class MqttService {
 
     public MqttService(
             final WeatherDataService weatherDataService,
-            final StationRegistrationService stationRegistrationService
+            final StationRegistrationService stationRegistrationService,
+            final LightningService lightningService
     ) {
         this.weatherDataService = weatherDataService;
         this.stationRegistrationService = stationRegistrationService;
+        this.lightningService = lightningService;
     }
 
     @PostConstruct
@@ -75,7 +78,7 @@ public final class MqttService {
             throw new RuntimeException(e);
         }
 
-        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService, stationRegistrationService, this));
+        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService, stationRegistrationService, this, lightningService));
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
