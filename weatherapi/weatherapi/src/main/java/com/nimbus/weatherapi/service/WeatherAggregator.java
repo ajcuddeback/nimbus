@@ -15,7 +15,7 @@ public class WeatherAggregator {
         this.weatherDataService = weatherDataService;
     }
 
-    public void aggregateWeather(final List<WeatherRecord> weatherRecords) {
+    public void aggregateWeather(final String stationId, final List<WeatherRecord> weatherRecords) {
         final double averageWindDirection = aggregateWindDirection(
                 weatherRecords.stream().map(WeatherRecord::windDirection).toList()
         );
@@ -52,34 +52,76 @@ public class WeatherAggregator {
                 totalRainfall,
                 weatherRecords.getFirst().rainfallFormat(),
                 Instant.now().getEpochSecond(),
-                weatherRecords.getFirst().stationId()
+                stationId
         );
 
         weatherDataService.saveWeatherData(weatherData);
     }
 
     private double aggregateWindDirection(final List<Double> windDirections) {
+        final double[] sinSum = {0d};
+        final double[] cosSum = {0d};
 
+        windDirections.forEach(windDirection -> {
+            final double r = Math.toRadians(windDirection);
+            sinSum[0] += Math.sin(r);
+            cosSum[0] += Math.cos(r);
+        });
+
+        final double flen = windDirections.size();
+
+        final double s = sinSum[0] / flen;
+        final double c = cosSum[0] / flen;
+
+        final double arc = Math.toDegrees(Math.atan(s / c));
+
+        double average = 0d;
+
+        if (s > 0 && c > 0) {
+            average = arc;
+        } else if (c < 0) {
+            average = arc + 180d;
+        } else if (s < 0 && c > 0) {
+            average = arc + 360d;
+        }
+
+        return average == 360 ? 0d : average;
     }
 
     private double aggregateRainfall(final List<Double> rainfalls){
-
+        return rainfalls.stream().reduce(0d, Double::sum);
     }
 
     private double aggregateWindSpeed(final List<Double> windSpeeds){
+        final int windSpeedsLength = windSpeeds.size();
 
+        final double windSpeedTotals = windSpeeds.stream().reduce(0d, Double::sum);
+
+        return windSpeedTotals / windSpeedsLength;
     }
 
     private double aggregateTemp(final List<Double> temps) {
+        final int tempsLength = temps.size();
 
+        final double tempTotals = temps.stream().reduce(0d, Double::sum);
+
+        return tempTotals / tempsLength;
     }
 
     private double aggregateHumidity(final List<Double> humidities) {
+        final int humiditiesLength = humidities.size();
 
+        final double humidityTotals = humidities.stream().reduce(0d, Double::sum);
+
+        return humidityTotals / humiditiesLength;
     }
 
     private double aggregatePressure(final List<Double> pressures) {
+        final int pressuresLength = pressures.size();
 
+        final double pressureTotals = pressures.stream().reduce(0d, Double::sum);
+
+        return pressureTotals / pressuresLength;
     }
 
 }

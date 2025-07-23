@@ -48,13 +48,18 @@ public class WeatherDataCache {
         final ZonedDateTime topOfCurrentHour = zonedDateTime.withMinute(0).withSecond(0).withNano(0);
         final Instant topOfCurrentHourInstant = topOfCurrentHour.toInstant();
 
-        getWeatherStationIds().stream().map(this::getWeatherData)
-                .filter(weatherDataList -> !weatherDataList.isEmpty())
-                .forEach(weatherDataList -> {
-                    List<WeatherRecord> filteredRecords = weatherDataList.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) &&
-                                !Instant.ofEpochSecond(weatherRecord.timestamp()).isAfter(topOfCurrentHourInstant)).toList();
+        final Set<String> stationIds = getWeatherStationIds();
 
-                    this.weatherAggregator.aggregateWeather(filteredRecords);
-                });
+        stationIds.forEach(stationId -> {
+            final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
+
+            if (!weatherRecords.isEmpty()) {
+                List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) &&
+                        !Instant.ofEpochSecond(weatherRecord.timestamp()).isAfter(topOfCurrentHourInstant)).toList();
+
+                this.weatherAggregator.aggregateWeather(stationId, filteredRecords);
+                this.flushWeatherCache(stationId);
+            }
+        });
     }
 }
