@@ -2,9 +2,12 @@ package com.nimbus.weatherapi.components;
 
 import com.nimbus.weatherapi.model.WeatherRecord;
 import com.nimbus.weatherapi.service.WeatherAggregator;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
+import reactor.util.retry.Retry;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -15,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Slf4j
 @Component
 public class WeatherDataCache {
     final WeatherAggregator weatherAggregator;
@@ -40,8 +44,9 @@ public class WeatherDataCache {
         return weatherDataMap.keySet();
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 45 * * * *")
     public void aggregateHourly() {
+        log.info("Running hourly aggregation");
         final Instant cutoffStart = Instant.now().minus(1, ChronoUnit.HOURS);
         final Instant now = Instant.now();
         final ZonedDateTime zonedDateTime = now.atZone(ZoneId.of("UTC"));
@@ -54,11 +59,34 @@ public class WeatherDataCache {
             final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
 
             if (!weatherRecords.isEmpty()) {
-                List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) &&
+                List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) ||
                         !Instant.ofEpochSecond(weatherRecord.timestamp()).isAfter(topOfCurrentHourInstant)).toList();
 
-                this.weatherAggregator.aggregateWeather(stationId, filteredRecords);
-                this.flushWeatherCache(stationId);
+                this.weatherAggregator.aggregateWeather(stationId, filteredRecords)
+                        .retryWhen(
+                                Retry.backoff(
+                                        3,
+                                        Duration.ofSeconds(1)
+                                )
+                                        .filter(err -> {
+                                            if (err instanceof DuplicateKeyException) {
+                                                log.warn("Failed to save weather data. Unique constraint failed.");
+                                                return false;
+                                            }
+
+                                            return true;
+                                        })
+                        )
+                        .doOnError(e -> log.error("All attempts to save weather data failed. Flushing cache...", e))
+                        .doFinally(v -> this.flushWeatherCache(stationId))
+                        .subscribe(
+                        weatherDataResponse -> {
+                            log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
+                        },
+                        err -> {
+                            log.error("Failed to save weather data", err);
+                        }
+                );
             }
         });
     }

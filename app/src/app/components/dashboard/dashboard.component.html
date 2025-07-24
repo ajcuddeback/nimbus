@@ -9,19 +9,19 @@
       {{ formattedTemp }}
     </p-card>
     <p-card header="Humidity">
-      {{ weatherData.hum.toFixed(0) }}%
+      {{ weatherData[weatherData.length - 1].hum.toFixed(0) }}%
     </p-card>
     <p-card header="Pressure">
-      {{ weatherData.pr.toFixed(0) }} {{ weatherData.prFormat }}
+      {{ weatherData[weatherData.length - 1].pr.toFixed(0) }} {{ weatherData[weatherData.length - 1].prFormat }}
     </p-card>
     <p-card header="Wind Speed">
-      {{ weatherData.windSpeed.toFixed(0) }} {{ weatherData.windSpeedFormat }}
+      {{ weatherData[weatherData.length - 1].windSpeed.toFixed(0) }} {{ weatherData[weatherData.length - 1].windSpeedFormat }}
     </p-card>
     <p-card header="Wind Direction">
-      {{ weatherData.windDirection }}
+      {{ weatherData[weatherData.length - 1].windDirection }}
     </p-card>
     <p-card header="Rainfall Total">
-      {{ weatherData.rainfall.toFixed(0) }} {{ weatherData.rainfallFormat }}
+      {{ weatherData[weatherData.length - 1].rainfall.toFixed(0) }} {{ weatherData[weatherData.length - 1].rainfallFormat }}
     </p-card>
   </div>
 }

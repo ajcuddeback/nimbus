@@ -12,17 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
-
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 
 @Slf4j
 @Service
 public final class MqttService {
     private MqttAsyncClient mqttClient;
-    private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
     private final LightningService lightningService;
     private final WeatherDataCache weatherDataCache;
@@ -49,12 +45,10 @@ public final class MqttService {
     private Integer qos;
 
     public MqttService(
-            final WeatherDataService weatherDataService,
             final StationRegistrationService stationRegistrationService,
             final LightningService lightningService,
             final WeatherDataCache weatherDataCache
             ) {
-        this.weatherDataService = weatherDataService;
         this.stationRegistrationService = stationRegistrationService;
         this.lightningService = lightningService;
         this.weatherDataCache = weatherDataCache;
@@ -92,7 +86,6 @@ public final class MqttService {
 
                     return this.connectAsync(connectionOptions)
                             .doOnSuccess(v -> log.info("Connected to MQTT"))
-                            // Use thenMany to start subscription Flux after connection completes, ignoring 'v'
                             .thenMany(
                                     Flux.fromIterable(topics)
                                             .doOnNext(t -> log.info("Attempting to subscribe to topic: {}", t))
@@ -104,7 +97,6 @@ public final class MqttService {
                                             )
                             );
                 })
-                .doOnSubscribe(sub -> log.info("MQTT setup: Subscribed to reactive chain"))
                 .doOnError(e -> log.error("Error in MQTT setup: {}", e.getMessage(), e))
                 .doFinally(signal -> log.info("MQTT flow finished with signal: {}", signal))
                 .subscribe();

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbus.weatherapi.components.WeatherDataCache;
 import com.nimbus.weatherapi.model.Lightning;
-import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.model.WeatherRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.IMqttToken;

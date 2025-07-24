@@ -2,11 +2,14 @@ package com.nimbus.weatherapi.service;
 
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.model.WeatherRecord;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @Service
 public class WeatherAggregator {
     private final WeatherDataService weatherDataService;
@@ -15,7 +18,12 @@ public class WeatherAggregator {
         this.weatherDataService = weatherDataService;
     }
 
-    public void aggregateWeather(final String stationId, final List<WeatherRecord> weatherRecords) {
+    public Mono<WeatherData> aggregateWeather(final String stationId, final List<WeatherRecord> weatherRecords) {
+        if (weatherRecords.isEmpty()) {
+            log.warn("No weather records found!");
+            return Mono.empty();
+        }
+
         final double averageWindDirection = aggregateWindDirection(
                 weatherRecords.stream().map(WeatherRecord::windDirection).toList()
         );
@@ -55,7 +63,7 @@ public class WeatherAggregator {
                 stationId
         );
 
-        weatherDataService.saveWeatherData(weatherData);
+        return weatherDataService.saveWeatherData(weatherData);
     }
 
     private double aggregateWindDirection(final List<Double> windDirections) {
@@ -85,11 +93,11 @@ public class WeatherAggregator {
             average = arc + 360d;
         }
 
-        return average == 360 ? 0d : average;
+        return roundToNearestHundredths(average == 360 ? 0d : average);
     }
 
     private double aggregateRainfall(final List<Double> rainfalls){
-        return rainfalls.stream().reduce(0d, Double::sum);
+        return roundToNearestHundredths(rainfalls.stream().reduce(0d, Double::sum));
     }
 
     private double aggregateWindSpeed(final List<Double> windSpeeds){
@@ -97,7 +105,7 @@ public class WeatherAggregator {
 
         final double windSpeedTotals = windSpeeds.stream().reduce(0d, Double::sum);
 
-        return windSpeedTotals / windSpeedsLength;
+        return roundToNearestHundredths(windSpeedTotals / windSpeedsLength);
     }
 
     private double aggregateTemp(final List<Double> temps) {
@@ -105,7 +113,7 @@ public class WeatherAggregator {
 
         final double tempTotals = temps.stream().reduce(0d, Double::sum);
 
-        return tempTotals / tempsLength;
+        return roundToNearestHundredths(tempTotals / tempsLength);
     }
 
     private double aggregateHumidity(final List<Double> humidities) {
@@ -113,7 +121,7 @@ public class WeatherAggregator {
 
         final double humidityTotals = humidities.stream().reduce(0d, Double::sum);
 
-        return humidityTotals / humiditiesLength;
+        return roundToNearestHundredths(humidityTotals / humiditiesLength);
     }
 
     private double aggregatePressure(final List<Double> pressures) {
@@ -121,7 +129,10 @@ public class WeatherAggregator {
 
         final double pressureTotals = pressures.stream().reduce(0d, Double::sum);
 
-        return pressureTotals / pressuresLength;
+        return roundToNearestHundredths(pressureTotals / pressuresLength);
     }
 
+    private double roundToNearestHundredths(final double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
 }
