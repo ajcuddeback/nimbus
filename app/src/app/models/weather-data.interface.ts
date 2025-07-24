@@ -6,7 +6,7 @@ export interface WeatherData {
   prFormat: string;
   timestamp: number;
   stationId: string;
-  id: string;
+  id?: string;
   windDirection: string;
   windSpeed: number;
   windSpeedFormat: string;

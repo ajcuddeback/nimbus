@@ -24,5 +24,6 @@ public class LightningService {
                         err -> {
                             log.error("Failed to save lightning data", err);
                         }
-                );    }
+                );
+    }
 }

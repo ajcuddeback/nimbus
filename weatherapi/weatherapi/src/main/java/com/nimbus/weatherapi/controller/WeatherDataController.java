@@ -1,19 +1,28 @@
 package com.nimbus.weatherapi.controller;
 
+import com.nimbus.weatherapi.components.WeatherDataCache;
 import com.nimbus.weatherapi.model.WeatherData;
+import com.nimbus.weatherapi.model.WeatherRecord;
 import com.nimbus.weatherapi.service.WeatherDataService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/weatherData")
 public class WeatherDataController {
     private final WeatherDataService weatherDataService;
+    private final WeatherDataCache weatherDataCache;
 
-    public WeatherDataController(WeatherDataService weatherDataService) {
+    public WeatherDataController(
+            WeatherDataService weatherDataService,
+            WeatherDataCache weatherDataCache
+    ) {
         this.weatherDataService = weatherDataService;
+        this.weatherDataCache = weatherDataCache;
     }
 
     @GetMapping
@@ -25,9 +34,9 @@ public class WeatherDataController {
     }
 
     @GetMapping("/current")
-    public Mono<WeatherData> getLatestWeatherData(
+    public Mono<List<WeatherRecord>> getLatestWeatherData(
             @RequestParam String stationId
     ) {
-        return weatherDataService.getLatestWeatherData(stationId);
+        return Mono.just(weatherDataCache.getWeatherData(stationId));
     }
 }

@@ -32,7 +32,7 @@ public final class WeatherData {
     private final double hum;
     private final double pr;
     private final String prFormat;
-    private final String windDirection;
+    private final double windDirection;
     private final double windSpeed;
     private final String windSpeedFormat;
     private final double rainfall;
@@ -41,7 +41,7 @@ public final class WeatherData {
     private final String stationId;
 
     public WeatherData(final double temp, final String tempFormat, final double hum,
-                      final double pr, final String prFormat, final String windDirection, final double windSpeed,
+                      final double pr, final String prFormat, final double windDirection, final double windSpeed,
                       final String windSpeedFormat, final double rainfall, final String rainfallFormat,
                        final long timestamp, final String stationId) {
         this.temp = temp;

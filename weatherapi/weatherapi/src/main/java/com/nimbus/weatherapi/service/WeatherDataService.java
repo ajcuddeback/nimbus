@@ -28,21 +28,8 @@ public final class WeatherDataService {
         this.weatherDataRepository = weatherDataRepository;
     }
 
-    public void saveWeatherData(final WeatherData weatherData) {
-        weatherDataRepository.save(weatherData)
-                .subscribe(
-                        weatherDataResponse -> {
-                            log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
-                        },
-                        err -> {
-                            if (err instanceof DuplicateKeyException) {
-                                log.warn("Failed to save weather data. Unique constraint failed for {}", weatherData);
-                                return;
-                            }
-                            log.error("Failed to save weather data", err);
-                        }
-                );
-
+    public Mono<WeatherData> saveWeatherData(final WeatherData weatherData) {
+        return weatherDataRepository.save(weatherData);
     }
 
     public Mono<Page<WeatherData>> getWeatherDataByLocation(

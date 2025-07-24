@@ -3,8 +3,9 @@ package com.nimbus.weatherapi.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbus.weatherapi.components.WeatherDataCache;
 import com.nimbus.weatherapi.model.Lightning;
-import com.nimbus.weatherapi.model.WeatherData;
+import com.nimbus.weatherapi.model.WeatherRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -19,22 +20,22 @@ import java.security.NoSuchAlgorithmException;
 
 @Slf4j
 public class WeatherDataCallback implements MqttCallback {
-    private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
     private final MqttService mqttService;
     private final LightningService lightningService;
+    private final WeatherDataCache weatherDataCache;
 
     public WeatherDataCallback(
-            WeatherDataService weatherDataService,
             StationRegistrationService stationRegistrationService,
             MqttService mqttService,
-            LightningService lightningService
+            LightningService lightningService,
+            WeatherDataCache weatherDataCache
     ) {
         super();
-        this.weatherDataService = weatherDataService;
         this.stationRegistrationService = stationRegistrationService;
         this.mqttService = mqttService;
         this.lightningService = lightningService;
+        this.weatherDataCache = weatherDataCache;
     }
 
     @Override
@@ -45,13 +46,13 @@ public class WeatherDataCallback implements MqttCallback {
             final ObjectMapper mapper = new ObjectMapper();
             try {
                 final JsonNode jsonNode = mapper.readTree(new String(message.getPayload()));
-                final WeatherData weatherData = new WeatherData(
+                final WeatherRecord weatherRecord = new WeatherRecord(
                         jsonNode.get("temp").asDouble(),
                         jsonNode.get("temp_format").asText(),
                         jsonNode.get("hum").asDouble(),
                         jsonNode.get("pr").asDouble(),
                         jsonNode.get("pr_format").asText(),
-                        jsonNode.get("wind_direction").asText(),
+                        jsonNode.get("wind_direction").asDouble(),
                         jsonNode.get("wind_speed").asDouble(),
                         jsonNode.get("wind_speed_format").asText(),
                         jsonNode.get("rainfall").asDouble(),
@@ -61,9 +62,9 @@ public class WeatherDataCallback implements MqttCallback {
                 );
 
                 try {
-                    this.weatherDataService.saveWeatherData(weatherData);
+                    this.weatherDataCache.addWeatherEntry(jsonNode.get("stationId").asText(), weatherRecord);
                 } catch (final Exception e) {
-                    log.error("Failed to save weather data", e);
+                    log.error("Failed to add weather data to cache!", e);
                 }
             } catch (final JsonProcessingException e) {
                 log.error("Failed", e);

@@ -1,5 +1,6 @@
 package com.nimbus.weatherapi.service;
 
+import com.nimbus.weatherapi.components.WeatherDataCache;
 import com.nimbus.weatherapi.utils.MqttSSLUtility;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -11,19 +12,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
-
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 
 @Slf4j
 @Service
 public final class MqttService {
     private MqttAsyncClient mqttClient;
-    private final WeatherDataService weatherDataService;
     private final StationRegistrationService stationRegistrationService;
     private final LightningService lightningService;
+    private final WeatherDataCache weatherDataCache;
 
     @Value("${mqtt.broker.url}")
     private String brokerUrl;
@@ -47,13 +45,13 @@ public final class MqttService {
     private Integer qos;
 
     public MqttService(
-            final WeatherDataService weatherDataService,
             final StationRegistrationService stationRegistrationService,
-            final LightningService lightningService
-    ) {
-        this.weatherDataService = weatherDataService;
+            final LightningService lightningService,
+            final WeatherDataCache weatherDataCache
+            ) {
         this.stationRegistrationService = stationRegistrationService;
         this.lightningService = lightningService;
+        this.weatherDataCache = weatherDataCache;
     }
 
     @PostConstruct
@@ -78,7 +76,7 @@ public final class MqttService {
             throw new RuntimeException(e);
         }
 
-        this.mqttClient.setCallback(new WeatherDataCallback(weatherDataService, stationRegistrationService, this, lightningService));
+        this.mqttClient.setCallback(new WeatherDataCallback(stationRegistrationService, this, lightningService, weatherDataCache));
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
@@ -88,7 +86,6 @@ public final class MqttService {
 
                     return this.connectAsync(connectionOptions)
                             .doOnSuccess(v -> log.info("Connected to MQTT"))
-                            // Use thenMany to start subscription Flux after connection completes, ignoring 'v'
                             .thenMany(
                                     Flux.fromIterable(topics)
                                             .doOnNext(t -> log.info("Attempting to subscribe to topic: {}", t))
@@ -100,7 +97,6 @@ public final class MqttService {
                                             )
                             );
                 })
-                .doOnSubscribe(sub -> log.info("MQTT setup: Subscribed to reactive chain"))
                 .doOnError(e -> log.error("Error in MQTT setup: {}", e.getMessage(), e))
                 .doFinally(signal -> log.info("MQTT flow finished with signal: {}", signal))
                 .subscribe();

@@ -18,7 +18,7 @@ import {CardModule} from 'primeng/card';
 export class DashboardComponent implements OnDestroy {
   isLoading = true;
   hasError = false;
-  weatherData: WeatherData;
+  weatherData: WeatherData[];
   private subscription: Subscription | undefined;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
@@ -68,10 +68,10 @@ export class DashboardComponent implements OnDestroy {
   }
 
   formatToF() {
-    this.formattedTemp = (this.weatherData.temp * (9/5) + 32).toFixed(2) + ' °F';
+    this.formattedTemp = (this.weatherData[this.weatherData.length - 1].temp * (9/5) + 32).toFixed(2) + ' °F';
   }
 
   formatToC() {
-    this.formattedTemp = this.weatherData.temp.toFixed(2) + ' °C';
+    this.formattedTemp = this.weatherData[this.weatherData.length - 1].temp.toFixed(2) + ' °C';
   }
 }

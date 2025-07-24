@@ -16,10 +16,10 @@ export class WeatherDataService {
     this.backendEndpoint = environment.WEATHER_API_ENDPOINT;
   }
 
-  getCurrentWeatherData(stationId: string): Observable<WeatherData> {
+  getCurrentWeatherData(stationId: string): Observable<WeatherData[]> {
     const options = {
       params: new HttpParams().set('stationId', stationId)
     }
-    return this.http.get<WeatherData>(`${this.backendEndpoint}/weatherData/current`, options);
+    return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/current`, options);
   }
 }
