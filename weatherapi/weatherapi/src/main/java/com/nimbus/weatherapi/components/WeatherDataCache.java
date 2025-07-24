@@ -44,7 +44,7 @@ public class WeatherDataCache {
         return weatherDataMap.keySet();
     }
 
-    @Scheduled(cron = "0 45 * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void aggregateHourly() {
         log.info("Running hourly aggregation");
         final Instant cutoffStart = Instant.now().minus(1, ChronoUnit.HOURS);
@@ -66,7 +66,6 @@ public class WeatherDataCache {
                         .retryWhen(
                                 Retry.backoff(
                                         3,
-                                        Duration.ofSeconds(1)
                                 )
                                         .filter(err -> {
                                             if (err instanceof DuplicateKeyException) {
