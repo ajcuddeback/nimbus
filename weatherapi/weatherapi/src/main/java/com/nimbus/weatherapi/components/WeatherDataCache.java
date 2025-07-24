@@ -66,6 +66,7 @@ public class WeatherDataCache {
                         .retryWhen(
                                 Retry.backoff(
                                         3,
+                                        Duration.ofSeconds(1)
                                 )
                                         .filter(err -> {
                                             if (err instanceof DuplicateKeyException) {
