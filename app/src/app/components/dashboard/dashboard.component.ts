@@ -1,16 +1,28 @@
-import {Component, Inject, OnDestroy, OnInit, PLATFORM_ID} from '@angular/core';
+import {
+  ApplicationRef,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  Inject,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID
+} from '@angular/core';
 import {WeatherDataService} from '../../services/weather-data.service';
 import {WeatherData} from '../../models/weather-data.interface';
 import {isPlatformBrowser} from '@angular/common';
-import {Subscription, switchMap, timer} from 'rxjs';
+import {first, Subscription, switchMap, timer} from 'rxjs';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
+import {NgxEchartsDirective} from 'ngx-echarts';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     ButtonModule,
-    CardModule
+    CardModule,
+    NgxEchartsDirective
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -22,26 +34,59 @@ export class DashboardComponent implements OnDestroy {
   private subscription: Subscription | undefined;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
+  options: any =  {
+    legend: {
+      align: 'left'
+    },
+    xAxis: {
+      type: 'category',
+      data: []
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        data: [],
+        type: 'line'
+      }
+    ]
+  };
 
   constructor(
     private weatherDataService: WeatherDataService,
+    private ngZone: NgZone,
+    private cdRef: ChangeDetectorRef,
+    private applicationRef: ApplicationRef,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {
+  ) {}
+
+  ngAfterViewInit() {
     if (isPlatformBrowser(this.platformId)) {
-      this.subscription = timer(0, 60000).pipe(switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")))
-        .subscribe({
-          next: data => {
-            this.isLoading = false;
-            this.hasError = false;
-            this.weatherData = data;
-            this.formatTemp();
-          },
-          error: error => {
-            this.isLoading = false;
-            this.hasError = true;
-            console.error(error);
-          }
-        });
+
+      this.applicationRef.isStable.pipe(first((isStable) => isStable)).subscribe(() => {
+        this.subscription = timer(0, 60000).pipe(switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")))
+          .subscribe({
+            next: data => {
+              this.ngZone.run(() => {
+                this.isLoading = false;
+                this.hasError = false;
+                this.weatherData = data;
+                this.formatTemp();
+                this.modifyChartOptions();
+                this.cdRef.markForCheck();
+              });
+            },
+            error: error => {
+              this.ngZone.run(() => {
+                this.isLoading = false;
+                this.hasError = true;
+                console.error(error);
+                this.cdRef.markForCheck();
+              });
+            }
+          });
+      })
     }
   }
 
@@ -57,6 +102,22 @@ export class DashboardComponent implements OnDestroy {
       this.tempFormat = 'f';
       this.formatToF();
     }
+  }
+
+  modifyChartOptions(): void {
+    this.options = {
+      ...this.options,
+      xAxis: {
+        ...this.options.xAxis,
+        data: this.weatherData.map(data => data.timestamp),
+      },
+      series: [
+        {
+          ...this.options.series[0],
+          data: this.weatherData.map(data => data.temp),
+        }
+      ]
+    };
   }
 
   formatTemp(){
