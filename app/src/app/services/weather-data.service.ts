@@ -22,4 +22,13 @@ export class WeatherDataService {
     }
     return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/current`, options);
   }
+
+  getTodaysWeatherData(stationId: string): Observable<WeatherData[]> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const options = {
+      params: new HttpParams().set('stationId', stationId).set('timezone', timeZone)
+    }
+
+    return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/today`, options);
+  }
 }

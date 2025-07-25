@@ -23,9 +23,10 @@
     <p-card header="Rainfall Total">
       {{ weatherData[weatherData.length - 1].rainfall.toFixed(0) }} {{ weatherData[weatherData.length - 1].rainfallFormat }}
     </p-card>
+    <p-card header="Wind Speed Variablility">
+      <div echarts [options]="windSpeedOptions" class="demo-chart"></div>
+    </p-card>
   </div>
-
-  <div echarts [options]="options" class="demo-chart"></div>
 }
 
 
