@@ -7,6 +7,7 @@ import com.nimbus.weatherapi.service.WeatherDataService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -38,5 +39,14 @@ public class WeatherDataController {
             @RequestParam String stationId
     ) {
         return Mono.just(weatherDataCache.getWeatherData(stationId));
+    }
+
+
+    @GetMapping("/today")
+    public Flux<WeatherData> getTodaysWeather(
+            @RequestParam String stationId,
+            @RequestParam String timezone
+    ) {
+        return weatherDataService.getTodaysWeather(stationId, timezone);
     }
 }
