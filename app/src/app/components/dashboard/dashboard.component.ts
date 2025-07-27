@@ -20,6 +20,7 @@ import * as R from 'remeda';
 import {tempChartConfigC, tempChartConfigF} from './chart-configs/temp-chart.config';
 import {TempLineComponent} from './temp-line/temp-line.component';
 import {WindLineComponent} from './wind-line/wind-line.component';
+import {HumidityLineComponent} from './humidity-line/humidity-line.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,6 +29,7 @@ import {WindLineComponent} from './wind-line/wind-line.component';
     CardModule,
     TempLineComponent,
     WindLineComponent,
+    HumidityLineComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -139,6 +141,10 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
 
   gatherTemps(weatherData: WeatherData[]): number[] {
     return weatherData.map(data => data.temp);
+  }
+
+  gatherHumidity(weatherData: WeatherData[]): number[] {
+    return weatherData.map(data => data.hum);
   }
 
   formatToF(temp: number): string {

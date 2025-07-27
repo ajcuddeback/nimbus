@@ -18,7 +18,7 @@ export class WindLineComponent implements OnChanges {
   windSpeedOptions: any = R.clone(windSpeedChartConfig);
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['timestamps'] || changes['timestamps']) {
+    if (changes['timestamps'] || changes['windSpeeds']) {
       this.modifyWindSpeedChartConfig();
     }
   }

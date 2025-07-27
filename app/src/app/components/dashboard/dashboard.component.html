@@ -35,6 +35,12 @@
     <p-card header="Todays Temp Variablility">
       <app-temp-line [tempData]="gatherTemps(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" [tempFormat]="tempFormat" />
     </p-card>
+    <p-card header="Humidity Variablility">
+      <app-humidity-line [humidity]="gatherHumidity(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
+    </p-card>
+    <p-card header="Todays Humidity Variablility">
+      <app-humidity-line [humidity]="gatherHumidity(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
+    </p-card>
   </div>
 }
 
