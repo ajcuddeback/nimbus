@@ -9,7 +9,10 @@ export const tempChartConfigF = {
     }
   },
   legend: {
-    align: 'left'
+    align: 'left',
+    padding: [
+      5, 0, 5, 30
+    ]
   },
   tooltip: {
     show: true,
@@ -22,8 +25,9 @@ export const tempChartConfigF = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value}°F'
-    }
+      formatter: '{value}°F',
+      fontSize: 10
+    },
   },
   series: [
     {

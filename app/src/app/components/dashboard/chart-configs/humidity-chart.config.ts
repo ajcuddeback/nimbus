@@ -9,7 +9,7 @@ export const humidityChartConfig = {
     }
   },
   legend: {
-    align: 'left'
+    align: 'left',
   },
   tooltip: {
     show: true,
@@ -22,7 +22,8 @@ export const humidityChartConfig = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value}%'
+      formatter: '{value}%',
+      fontSize: 10
     }
   },
   series: [

@@ -22,7 +22,10 @@ export const windSpeedChartConfig = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value} mph'
+      formatter: '{value} mph',
+      fontSize: 10,
+      rotate: 45,
+      margin: 6
     }
   },
   series: [

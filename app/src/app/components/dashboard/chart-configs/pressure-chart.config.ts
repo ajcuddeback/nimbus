@@ -22,7 +22,8 @@ export const pressureChartConfig = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value} in'
+      formatter: '{value} in',
+      fontSize: 10
     }
   },
   series: [

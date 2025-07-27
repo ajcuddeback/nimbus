@@ -22,7 +22,8 @@ export const rainfallChartConfig = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value}mm'
+      formatter: '{value}mm',
+      fontSize: 10
     }
   },
   series: [
