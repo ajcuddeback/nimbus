@@ -18,13 +18,23 @@
       {{ weatherData[weatherData.length - 1].windSpeed.toFixed(0) }} {{ weatherData[weatherData.length - 1].windSpeedFormat }}
     </p-card>
     <p-card header="Wind Direction">
-      {{ weatherData[weatherData.length - 1].windDirection }}
+      {{ formatWindDirection(weatherData[weatherData.length - 1].windDirection) }}
     </p-card>
     <p-card header="Rainfall Total">
       {{ weatherData[weatherData.length - 1].rainfall.toFixed(0) }} {{ weatherData[weatherData.length - 1].rainfallFormat }}
     </p-card>
     <p-card header="Wind Speed Variablility">
       <div echarts [options]="windSpeedOptions" class="demo-chart"></div>
+    </p-card>
+    <p-card header="Todays Wind Speed Variablility">
+      <div echarts [options]="todaysWindSpeedOptions" class="demo-chart"></div>
+    </p-card>
+    <p-card header="Todays Temp Variablility">
+      @if (this.tempFormat == 'f') {
+        <div echarts [options]="todaysTempOptionsF" class="demo-chart"></div>
+      } @else {
+        <div echarts [options]="todaysTempOptionsC" class="demo-chart"></div>
+      }
     </p-card>
   </div>
 }

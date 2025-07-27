@@ -78,7 +78,7 @@ public final class WeatherDataService {
                                         .gte(firstHourOfDayUtcEpoch)
                                         .lte(lastHourOfDayUtcEpoch)
                         )
-                                .with(Sort.by("timestamp").descending())
+                                .with(Sort.by("timestamp").ascending())
                 ).all();
     }
 } 

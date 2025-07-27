@@ -7,7 +7,7 @@ export interface WeatherData {
   timestamp: number;
   stationId: string;
   id?: string;
-  windDirection: string;
+  windDirection: number;
   windSpeed: number;
   windSpeedFormat: string;
   rainfall: number;
