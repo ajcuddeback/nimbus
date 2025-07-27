@@ -1,13 +1,29 @@
 export const humidityChartConfig = {
+  toolbox: {
+    show: true,
+    feature: {
+      saveAsImage: {
+        show: true,
+        type: 'png'
+      },
+    }
+  },
   legend: {
     align: 'left'
+  },
+  tooltip: {
+    show: true,
+    formatter: '{b}: {c}%'
   },
   xAxis: {
     type: 'category',
     data: []
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
+    axisLabel: {
+      formatter: '{value}%'
+    }
   },
   series: [
     {
@@ -17,6 +33,7 @@ export const humidityChartConfig = {
     },
   ],
   visualMap: {
+    show: false,
     top: 50,
     right: 10,
     pieces:[

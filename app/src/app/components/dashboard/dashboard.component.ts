@@ -21,6 +21,9 @@ import {tempChartConfigC, tempChartConfigF} from './chart-configs/temp-chart.con
 import {TempLineComponent} from './temp-line/temp-line.component';
 import {WindLineComponent} from './wind-line/wind-line.component';
 import {HumidityLineComponent} from './humidity-line/humidity-line.component';
+import {CompassComponent} from './compass/compass.component';
+import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
+import {PressureLineComponent} from './pressure-line/pressure-line.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,6 +33,9 @@ import {HumidityLineComponent} from './humidity-line/humidity-line.component';
     TempLineComponent,
     WindLineComponent,
     HumidityLineComponent,
+    CompassComponent,
+    RainfallLineComponent,
+    PressureLineComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -143,8 +149,24 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
     return weatherData.map(data => data.temp);
   }
 
+  gatherRainfall(weatherData: WeatherData[]): number[] {
+    return weatherData.map(data => data.rainfall);
+  }
+
+  gatherPressures(weatherData: WeatherData[]): number[] {
+    return weatherData.map(data => this.convertPressureToInches(data.pr));
+  }
+
   gatherHumidity(weatherData: WeatherData[]): number[] {
     return weatherData.map(data => data.hum);
+  }
+
+  convertPressureToInches(pressure: number): number {
+    return +(pressure * 0.02953).toFixed(2)
+  }
+
+  getRainTotal(weatherData: WeatherData[]): number {
+    return weatherData.reduce((accumulator, currentValue) => accumulator + currentValue.rainfall, 0)
   }
 
   formatToF(temp: number): string {

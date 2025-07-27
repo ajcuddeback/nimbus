@@ -1,4 +1,4 @@
-export const tempChartConfigF = {
+export const rainfallChartConfig = {
   toolbox: {
     show: true,
     feature: {
@@ -13,7 +13,7 @@ export const tempChartConfigF = {
   },
   tooltip: {
     show: true,
-    formatter: '{b}: {c}°F'
+    formatter: '{b}: {c}mm'
   },
   xAxis: {
     type: 'category',
@@ -22,7 +22,7 @@ export const tempChartConfigF = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value}°F'
+      formatter: '{value}mm'
     }
   },
   series: [
@@ -34,43 +34,14 @@ export const tempChartConfigF = {
   ],
   visualMap: {
     show: false,
-    top: 50,
-    right: 10,
     pieces: [
-      {
-        gt: -Infinity,
-        lte: 32,
-        color: '#00BFFF'
-      },
-      {
-        gt: 32,
-        lte: 50,
-        color: '#1E90FF'
-      },
-      {
-        gt: 50,
-        lte: 65,
-        color: '#93CE07'
-      },
-      {
-        gt: 65,
-        lte: 75,
-        color: '#FBDB0F'
-      },
-      {
-        gt: 75,
-        lte: 85,
-        color: '#FC7D02'
-      },
-      {
-        gt: 85,
-        lte: 95,
-        color: '#FD0100'
-      },
-      {
-        gt: 95,
-        color: '#8B0000'
-      }
+        { lte: 0.2, color: '#607D8B' },
+        { gte: 0.21, lte: 2.5, color: '#2196F3' },
+        { gte: 2.51, lte: 7.5, color: '#1976D2' },
+        { gte: 7.51, lte: 15, color: '#0D47A1' },
+        { gte: 15.01, lte: 30, color: '#4527A0' },
+        { gte: 30.01, lte: 50, color: '#6A1B9A' },
+        { gte: 50.01, color: '#B71C1C' }
     ],
     outOfRange: {
       color: '#999'
