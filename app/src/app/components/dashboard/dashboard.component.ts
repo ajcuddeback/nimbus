@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ApplicationRef,
   ChangeDetectorRef,
   Component,
@@ -17,18 +18,21 @@ import {NgxEchartsDirective} from 'ngx-echarts';
 import {windSpeedChartConfig} from './chart-configs/wind-speed-chart.config';
 import * as R from 'remeda';
 import {tempChartConfigC, tempChartConfigF} from './chart-configs/temp-chart.config';
+import {TempLineComponent} from './temp-line/temp-line.component';
+import {WindLineComponent} from './wind-line/wind-line.component';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     ButtonModule,
     CardModule,
-    NgxEchartsDirective,
+    TempLineComponent,
+    WindLineComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnDestroy {
+export class DashboardComponent implements OnDestroy, AfterViewInit {
   isLoading = true;
   isTodaysWeatherDataLoading = true;
   hasError = false;
@@ -38,11 +42,6 @@ export class DashboardComponent implements OnDestroy {
   private subscription: Subscription | undefined;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
-  windSpeedOptions: any = R.clone(windSpeedChartConfig);
-  todaysWindSpeedOptions: any = R.clone(windSpeedChartConfig);
-  todaysTempOptionsF: any = R.clone(tempChartConfigF);
-  todaysTempOptionsC: any = R.clone(tempChartConfigC);
-
 
   constructor(
     private weatherDataService: WeatherDataService,
@@ -64,7 +63,6 @@ export class DashboardComponent implements OnDestroy {
                 this.hasError = false;
                 this.weatherData = data;
                 this.formattedTemp = this.formatTemp(this.weatherData[this.weatherData.length - 1].temp);
-                this.modifyWindSpeedChartOptions();
                 this.cdRef.markForCheck();
               });
             },
@@ -91,8 +89,6 @@ export class DashboardComponent implements OnDestroy {
             this.isTodaysWeatherDataLoading = false;
             this.todaysWeatherDataHasError = false;
             this.todaysWeatherData = data;
-            this.modifyTodaysWindSpeedChartOptions();
-            this.modifyTodayTempChartOptions();
             this.cdRef.markForCheck();
           });
         },
@@ -122,80 +118,6 @@ export class DashboardComponent implements OnDestroy {
     this.cdRef.markForCheck();
   }
 
-  modifyWindSpeedChartOptions(): void {
-    this.windSpeedOptions = {
-      ...this.windSpeedOptions,
-      xAxis: {
-        ...this.windSpeedOptions.xAxis,
-        data: this.weatherData.map(data => {
-          const date = new Date(data.timestamp * 1000);
-          return this.datePipe.transform(date, 'h:mm a') ?? '';
-        }),
-      },
-      series: [
-        {
-          ...this.windSpeedOptions.series[0],
-          data: this.weatherData.map(data => data.windSpeed),
-        }
-      ]
-    };
-  }
-
-  modifyTodaysWindSpeedChartOptions(): void {
-    this.todaysWindSpeedOptions = {
-      ...this.todaysWindSpeedOptions,
-      xAxis: {
-        ...this.todaysWindSpeedOptions.xAxis,
-        data: this.todaysWeatherData.map(data => {
-          const date = new Date(data.timestamp * 1000);
-          return this.datePipe.transform(date, 'h:mm a') ?? '';
-        }),
-      },
-      series: [
-        {
-          ...this.todaysWindSpeedOptions.series[0],
-          data: this.todaysWeatherData.map(data => data.windSpeed),
-        }
-      ]
-    };
-  }
-
-  modifyTodayTempChartOptions(): void {
-    this.todaysTempOptionsF = {
-      ...this.todaysTempOptionsF,
-      xAxis: {
-        ...this.todaysTempOptionsF.xAxis,
-        data: this.todaysWeatherData.map(data => {
-          const date = new Date(data.timestamp * 1000);
-          return this.datePipe.transform(date, 'h:mm a') ?? '';
-        }),
-      },
-      series: [
-        {
-          ...this.todaysTempOptionsF.series[0],
-          data: this.todaysWeatherData.map(data => this.getTempInF(data.temp)),
-        }
-      ]
-    };
-
-    this.todaysTempOptionsC = {
-      ...this.todaysTempOptionsC,
-      xAxis: {
-        ...this.todaysTempOptionsC.xAxis,
-        data: this.todaysWeatherData.map(data => {
-          const date = new Date(data.timestamp * 1000);
-          return this.datePipe.transform(date, 'h:mm a') ?? '';
-        }),
-      },
-      series: [
-        {
-          ...this.todaysTempOptionsC.series[0],
-          data: this.todaysWeatherData.map(data => (data.temp)),
-        }
-      ]
-    };
-  }
-
   formatTemp(temp: number): string {
     if (this.tempFormat === 'f') {
       return this.formatToF(temp);
@@ -204,16 +126,27 @@ export class DashboardComponent implements OnDestroy {
     }
   }
 
+  gatherTimestamps(weatherData: WeatherData[]): string[] {
+    return weatherData.map(data => {
+      const date = new Date(data.timestamp * 1000);
+      return this.datePipe.transform(date, 'h:mm a') ?? '';
+    })
+  }
+
+  gatherWindSpeeds(weatherData: WeatherData[]): number[] {
+    return weatherData.map(data => data.windSpeed);
+  }
+
+  gatherTemps(weatherData: WeatherData[]): number[] {
+    return weatherData.map(data => data.temp);
+  }
+
   formatToF(temp: number): string {
     return (temp * (9/5) + 32).toFixed(2) + ' °F';
   }
 
   formatToC(temp: number): string {
     return temp.toFixed(2) + ' °C';
-  }
-
-  getTempInF(temp: number): number {
-    return parseFloat((temp * (9/5) + 32).toFixed(2));
   }
 
   formatWindDirection(direction: number): string {

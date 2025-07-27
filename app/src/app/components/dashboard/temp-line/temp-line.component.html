@@ -1,0 +1,5 @@
+@if (this.tempFormat == 'f') {
+  <div echarts [options]="todaysTempOptionsF" class="demo-chart"></div>
+} @else {
+  <div echarts [options]="todaysTempOptionsC" class="demo-chart"></div>
+}
