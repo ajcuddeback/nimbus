@@ -1,17 +1,58 @@
-# nimbus
-A weather statistics application
+# 🌩️ Nimbus — Real-Time Weather Station Platform
 
-# Rationale
-- Choice of Database
-  - I will be using MongoDB for the primary DB of writing real time weather data from multiple weather stations. MongoDB offers:
-    -  Fast writes
-    -  Quick reads
-    -  Built in data aggregation
-    -  Data anlysis functions such as averaging
-    -  Horizontal partitioning
-    -  Provides a flexible schema, allowing me to hit the ground running and know I can change the schema when I need to
-    -  Includes built in geo-indexing - a huge plus for if I were to want to query for weather data near you 
- - Why I didn't pick PSQL
-    - While my weather data is structured and can easily be pre-defined, I'd prefer not to get locked into a schema with likely future changes to the schema
-    - I don't really <i>need</i> to worry about some code overwriting existing data. Once the weather data has been writen, it should not be updated ever again. While PSQL would benefit me if I had many users updating the same data, I don't exactly have this need so PSQL wouldn't add that benefit
-    - I need very quick writes and reads to allow users to get accurate real time updates to weather. And to allow many weather stations, as my applications continues to grow, to be able to quickly write real time updates to weather. MongoDB is just better at handling this than PSQL as it will scale better and natrually has faster writes.
+> A full-stack weather monitoring system that streams data from a physical Raspberry Pi sensor to a cloud-hosted application using MQTT, Spring WebFlux, MongoDB, and Angular SSR.
+
+---
+
+## 🛰️ Overview
+
+Nimbus collects minute-by-minute atmospheric data from a custom-built weather station (running on a Raspberry Pi), ingests the data over MQTT into a reactive Java backend, stores it in MongoDB, and renders it in real-time via an Angular SSR frontend deployed on a virtual machine with NGINX.
+
+![architecture](./docs/architecture.jpg)
+
+---
+
+## ⚙️ Tech Stack
+
+| Layer        | Technology                             |
+|--------------|-----------------------------------------|
+| IoT Sensor   | Raspberry Pi, Python, BME280            |
+| Messaging    | MQTT (Mosquitto broker)                 |
+| Backend      | Java, Spring WebFlux, Reactor, MongoDB  |
+| Frontend     | Angular (SSR with hydration), ngx-charts |
+| Deployment   | Ubuntu VM, NGINX, PM2                   |
+
+---
+
+## 🌐 Live Demo
+
+🔗 [https://nimbus-weather-project.com](https://nimbus-weather-project.com)
+
+---
+
+## 🔧 Features
+
+- 📡 **Real-time streaming** from Raspberry Pi over MQTT
+- 🧠 **Reactive backend** using Spring WebFlux and Reactor
+- 🗄️ **Minute-by-minute ingestion** into MongoDB
+- 📊 **Historical charting** by metric and time
+- 🔄 **SSR-enabled Angular UI** for SEO & fast load
+- ☁️ **Self-hosted on a virtual machine** using NGINX
+
+---
+
+## 🧪 Local Dev Setup
+
+```bash
+# clone repo
+git clone https://github.com/ajcuddeback/nimbus.git
+cd nimbus
+
+# Setup backend
+cd weatherapi/weatherapi
+./mvnw spring-boot:run
+
+# Setup frontend
+cd ../../app
+npm install
+npm run dev:ssr
