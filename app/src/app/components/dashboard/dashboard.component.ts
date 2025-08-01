@@ -204,7 +204,7 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
   }
 
   getRainTotal(weatherData: WeatherData[]): number {
-    return Math.round(weatherData.reduce((accumulator, currentValue) => accumulator + (currentValue.rainfall / 25.4), 0) / 100) * 100;
+    return Math.round(weatherData.reduce((accumulator, currentValue) => accumulator + (currentValue.rainfall / 25.4), 0) * 100) / 100;
   }
 
   formatToF(temp: number): string {
