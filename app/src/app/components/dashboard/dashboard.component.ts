@@ -188,7 +188,7 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
   }
 
   gatherRainfall(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.rainfall);
+    return weatherData.map(data => Math.round((data.rainfall / 25.4) * 100) / 100);
   }
 
   gatherPressures(weatherData: WeatherData[]): number[] {
