@@ -6,9 +6,12 @@
   <div class="dashboard-grid">
     <p-card header="Temp">
       Current: {{ formattedTemp }}
+      <br />
+      Feels Like: {{ formatTemp(calculateFeelsLikeTemp(weatherData[weatherData.length - 1].temp, weatherData[weatherData.length - 1].hum, weatherData[weatherData.length - 1].windSpeed)) }}
       <app-temp-line [tempData]="gatherTemps(weatherData)" [timestamps]="gatherTimestamps(weatherData)" [tempFormat]="tempFormat" />
     </p-card>
     <p-card header="Today's Temp Variablility">
+      Today's Peak Temp: {{ getPeakTemp(todaysWeatherData) }}
       <app-temp-line [tempData]="gatherTemps(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" [tempFormat]="tempFormat" />
     </p-card>
     <p-card header="Humidity">
@@ -16,14 +19,12 @@
       <app-humidity-line [humidity]="gatherHumidity(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
     </p-card>
     <p-card header="Today's Humidity Variablility">
+      Today's Peak Humidity: {{ getPeakHumidity(todaysWeatherData) }}
       <app-humidity-line [humidity]="gatherHumidity(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
     </p-card>
     <p-card header="Pressure">
       Current: {{ convertPressureToInches(weatherData[weatherData.length - 1].pr) }} in
       <app-pressure-line [pressures]="gatherPressures(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
-    </p-card>
-    <p-card header="Today's Pressure Variability">
-      <app-pressure-line [pressures]="gatherPressures(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
     </p-card>
     <p-card header="Wind Speed">
       Current: {{ weatherData[weatherData.length - 1].windSpeed }} mph
@@ -36,10 +37,11 @@
       <app-compass [direction]="weatherData[weatherData.length -1].windDirection" />
     </p-card>
     <p-card header="Rainfall Total">
-      Current Total: {{ getRainTotal(weatherData) }}mm
+      Current Total: {{ getRainTotal(weatherData) }}in.
       <app-rainfall-line [rainfall]="gatherRainfall(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
     </p-card>
     <p-card header="Today's Rainfall Total">
+      Today's Total: {{ getRainTotal(todaysWeatherData) }}in.
       <app-rainfall-line [rainfall]="gatherRainfall(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
     </p-card>
 

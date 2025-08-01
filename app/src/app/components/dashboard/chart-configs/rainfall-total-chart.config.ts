@@ -13,7 +13,7 @@ export const rainfallChartConfig = {
   },
   tooltip: {
     show: true,
-    formatter: '{b}: {c}mm'
+    formatter: '{b}: {c}in.'
   },
   xAxis: {
     type: 'category',
@@ -22,8 +22,10 @@ export const rainfallChartConfig = {
   yAxis: {
     type: 'value',
     axisLabel: {
-      formatter: '{value}mm',
-      fontSize: 10
+      formatter: '{value}in.',
+      fontSize: 10,
+      rotate: 45,
+      margin: 6
     }
   },
   series: [

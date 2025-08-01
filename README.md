@@ -32,16 +32,19 @@ Nimbus collects minute-by-minute atmospheric data from a custom-built weather st
 
 ## 🔧 Features
 
-- 📡 **Real-time streaming** from Raspberry Pi over MQTT
-- 🧠 **Reactive backend** using Spring WebFlux and Reactor
-- 🗄️ **Minute-by-minute ingestion** into MongoDB
-- 📊 **Historical charting** by metric and time
-- 🔄 **SSR-enabled Angular UI** for SEO & fast load
-- ☁️ **Self-hosted on a virtual machine** using NGINX
+- **Real-time streaming** from Raspberry Pi over MQTT
+- **Reactive backend** using Spring WebFlux and Reactor
+- **Minute-by-minute ingestion** into MongoDB
+- **Historical charting** by metric and time
+- **SSR-enabled Angular UI** for SEO & fast load
+- **Self-hosted on a virtual machine** using NGINX
 
 ---
 
 ## 🧪 Local Dev Setup
+
+### Note
+You must have a raspberry pi running the code from https://github.com/ajcuddeback/nimbus-pi.git and a MongoDB instance
 
 ```bash
 # clone repo
