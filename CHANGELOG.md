@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ajcuddeback/nimbus/compare/v1.0.0...v1.1.0) (2025-08-08)
+
+
+### Features
+
+* Adding google analytics ([a811e70](https://github.com/ajcuddeback/nimbus/commit/a811e7007cc20b844f88b9f50175df6158d1fa2c))
+
 ## 1.0.0 (2025-08-03)
 
 
