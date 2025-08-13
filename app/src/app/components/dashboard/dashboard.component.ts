@@ -10,8 +10,20 @@ import {
 } from '@angular/core';
 import {WeatherDataService} from '../../services/weather-data.service';
 import {WeatherData} from '../../models/weather-data.interface';
-import {DatePipe, isPlatformBrowser} from '@angular/common';
-import {first, Subscription, switchMap, timer} from 'rxjs';
+import {AsyncPipe, DatePipe, isPlatformBrowser} from '@angular/common';
+import {
+  catchError,
+  combineLatest,
+  finalize,
+  first,
+  map,
+  Observable,
+  of, shareReplay,
+  Subscription,
+  switchMap,
+  tap,
+  timer
+} from 'rxjs';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
 import {NgxEchartsDirective} from 'ngx-echarts';
@@ -25,6 +37,8 @@ import {CompassComponent} from './compass/compass.component';
 import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
 import {PressureLineComponent} from './pressure-line/pressure-line.component';
 
+// RUn with  ng serve --host 127.0.0.1
+
 @Component({
   selector: 'app-dashboard',
   imports: [
@@ -36,18 +50,19 @@ import {PressureLineComponent} from './pressure-line/pressure-line.component';
     CompassComponent,
     RainfallLineComponent,
     PressureLineComponent,
+    AsyncPipe,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnDestroy, AfterViewInit {
+export class DashboardComponent implements AfterViewInit {
   isLoading = true;
   isTodaysWeatherDataLoading = true;
   hasError = false;
   todaysWeatherDataHasError = false;
   weatherData: WeatherData[];
   todaysWeatherData: WeatherData[];
-  private subscription: Subscription | undefined;
+  thisHourWeatherData$: Observable<WeatherData[] | null>;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
 
@@ -61,29 +76,32 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
   ) {}
 
   ngAfterViewInit() {
+    // TODO: Use a merge map to combine both getCurrentWeatherData and getTodaysWeatherData into one observable.
+    // TODO: Ensure to return some form of object, each key having todays and current data in it
+    // TODO: Only async pipe to the combined observable. We call both of these every minute anyway! May as well.
+    // TODO: To be fair, we should only have to call todays weather once per hour... But I can revisit this.
+    // TODO: Maybe use a pipe for temp formatting. Right not, I do it manually based on a switch
+    // TODO: But using a pipe could be helpful?
     if (isPlatformBrowser(this.platformId)) {
       this.applicationRef.isStable.pipe(first((isStable) => isStable)).subscribe(() => {
-        this.subscription = timer(0, 60000).pipe(switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")))
-          .subscribe({
-            next: data => {
-              this.ngZone.run(() => {
-                this.isLoading = false;
-                this.hasError = false;
-                this.weatherData = data;
-                this.formattedTemp = this.formatTemp(this.weatherData[this.weatherData.length - 1].temp);
-                this.cdRef.markForCheck();
-              });
-            },
-            error: error => {
-              this.ngZone.run(() => {
-                this.isLoading = false;
-                this.hasError = true;
-                console.error(error);
-                this.cdRef.markForCheck();
-              });
+        this.thisHourWeatherData$ = timer(0, 60000).pipe(
+          switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")),
+          tap((data) => {
+            if (data[data.length - 1]?.temp) {
+              this.formattedTemp = this.formatTemp(data[data.length - 1].temp);
             }
-          });
-
+            this.hasError = false;
+            this.isLoading = false;
+            this.cdRef.markForCheck();
+          }),
+          catchError(error => {
+            console.log(error);
+            this.hasError = true;
+            this.isLoading = false;
+            return of(null);
+          }),
+          shareReplay({ bufferSize: 1, refCount: true })
+        );
         this.getTodaysWeatherData();
       })
     }
@@ -111,10 +129,7 @@ export class DashboardComponent implements OnDestroy, AfterViewInit {
       });
   }
 
-  ngOnDestroy(): void {
-    this.subscription?.unsubscribe();
-  }
-    onTempFormatChange() {
+  onTempFormatChange() {
     if (this.tempFormat === 'f') {
       this.tempFormat = 'c';
     } else {
