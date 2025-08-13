@@ -1,51 +1,47 @@
-@if (isLoading) {
+@if (weatherData$ | async; as weatherData; ) {
+  <p-card header="Temp">
+    Current: {{ formattedTemp }}
+    <br />
+    Feels Like: {{ formatTemp(calculateFeelsLikeTemp(weatherData.current[weatherData.current.length - 1].temp, weatherData.current[weatherData.current.length - 1].hum, weatherData.current[weatherData.current.length - 1].windSpeed)) }}
+    <app-temp-line [tempData]="gatherTemps(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" [tempFormat]="tempFormat" />
+  </p-card>
+  <p-card header="Today's Temp Variablility">
+    Today's Peak Temp: {{ getPeakTemp(weatherData.today) }}
+    <app-temp-line [tempData]="gatherTemps(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" [tempFormat]="tempFormat" />
+  </p-card>
+  <p-card header="Humidity">
+    Current: {{ weatherData.current[weatherData.current.length - 1].hum }}%
+    <app-humidity-line [humidity]="gatherHumidity(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
+  </p-card>
+  <p-card header="Today's Humidity Variablility">
+    Today's Peak Humidity: {{ getPeakHumidity(weatherData.today) }}
+    <app-humidity-line [humidity]="gatherHumidity(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
+  </p-card>
+  <p-card header="Pressure">
+    Current: {{ convertPressureToInches(weatherData.current[weatherData.current.length - 1].pr) }} in
+    <app-pressure-line [pressures]="gatherPressures(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
+  </p-card>
+  <p-card header="Wind Speed">
+    Current: {{ weatherData.current[weatherData.current.length - 1].windSpeed }} mph
+    <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
+  </p-card>
+  <p-card header="Today's Wind Speed Variablility">
+    <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
+  </p-card>
+  <p-card header="Wind Direction">
+    <app-compass [direction]="weatherData.current[weatherData.current.length - 1].windDirection" />
+  </p-card>
+  <p-card header="Rainfall Total">
+    Current Total: {{ getRainTotal(weatherData.current) }}in.
+    <app-rainfall-line [rainfall]="gatherRainfall(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
+  </p-card>
+  <p-card header="Today's Rainfall Total">
+    Today's Total: {{ getRainTotal(weatherData.today) }}in.
+    <app-rainfall-line [rainfall]="gatherRainfall(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
+  </p-card>
+} @else if (isLoading) {
   <div>Loading....</div>
 } @else if (hasError) {
   <div>Errored!</div>
-} @else {
-  <div class="dashboard-grid">
-    <p-card header="Temp">
-      Current: {{ formattedTemp }}
-      <br />
-      Feels Like: {{ formatTemp(calculateFeelsLikeTemp(weatherData[weatherData.length - 1].temp, weatherData[weatherData.length - 1].hum, weatherData[weatherData.length - 1].windSpeed)) }}
-      <app-temp-line [tempData]="gatherTemps(weatherData)" [timestamps]="gatherTimestamps(weatherData)" [tempFormat]="tempFormat" />
-    </p-card>
-    <p-card header="Today's Temp Variablility">
-      Today's Peak Temp: {{ getPeakTemp(todaysWeatherData) }}
-      <app-temp-line [tempData]="gatherTemps(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" [tempFormat]="tempFormat" />
-    </p-card>
-    <p-card header="Humidity">
-      Current: {{ weatherData[weatherData.length - 1].hum }}%
-      <app-humidity-line [humidity]="gatherHumidity(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
-    </p-card>
-    <p-card header="Today's Humidity Variablility">
-      Today's Peak Humidity: {{ getPeakHumidity(todaysWeatherData) }}
-      <app-humidity-line [humidity]="gatherHumidity(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
-    </p-card>
-    <p-card header="Pressure">
-      Current: {{ convertPressureToInches(weatherData[weatherData.length - 1].pr) }} in
-      <app-pressure-line [pressures]="gatherPressures(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
-    </p-card>
-    <p-card header="Wind Speed">
-      Current: {{ weatherData[weatherData.length - 1].windSpeed }} mph
-      <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
-    </p-card>
-    <p-card header="Today's Wind Speed Variablility">
-      <app-wind-line [windSpeeds]="gatherWindSpeeds(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
-    </p-card>
-    <p-card header="Wind Direction">
-      <app-compass [direction]="weatherData[weatherData.length -1].windDirection" />
-    </p-card>
-    <p-card header="Rainfall Total">
-      Current Total: {{ getRainTotal(weatherData) }}in.
-      <app-rainfall-line [rainfall]="gatherRainfall(weatherData)" [timestamps]="gatherTimestamps(weatherData)" />
-    </p-card>
-    <p-card header="Today's Rainfall Total">
-      Today's Total: {{ getRainTotal(todaysWeatherData) }}in.
-      <app-rainfall-line [rainfall]="gatherRainfall(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)" />
-    </p-card>
-
-  </div>
 }
-
 
