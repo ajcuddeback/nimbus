@@ -5,7 +5,6 @@ import {
   Component,
   Inject,
   NgZone,
-  OnDestroy,
   PLATFORM_ID
 } from '@angular/core';
 import {WeatherDataService} from '../../services/weather-data.service';
@@ -13,23 +12,16 @@ import {WeatherData} from '../../models/weather-data.interface';
 import {AsyncPipe, DatePipe, isPlatformBrowser} from '@angular/common';
 import {
   catchError,
-  combineLatest,
-  finalize,
-  first,
-  map,
+  first, forkJoin,
   Observable,
   of, shareReplay,
-  Subscription,
   switchMap,
   tap,
   timer
 } from 'rxjs';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
-import {NgxEchartsDirective} from 'ngx-echarts';
 import {windSpeedChartConfig} from './chart-configs/wind-speed-chart.config';
-import * as R from 'remeda';
-import {tempChartConfigC, tempChartConfigF} from './chart-configs/temp-chart.config';
 import {TempLineComponent} from './temp-line/temp-line.component';
 import {WindLineComponent} from './wind-line/wind-line.component';
 import {HumidityLineComponent} from './humidity-line/humidity-line.component';
@@ -60,15 +52,12 @@ export class DashboardComponent implements AfterViewInit {
   isTodaysWeatherDataLoading = true;
   hasError = false;
   todaysWeatherDataHasError = false;
-  weatherData: WeatherData[];
-  todaysWeatherData: WeatherData[];
-  thisHourWeatherData$: Observable<WeatherData[] | null>;
+  weatherData$: Observable<{current: WeatherData[], today: WeatherData[]}>;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
 
   constructor(
     private weatherDataService: WeatherDataService,
-    private ngZone: NgZone,
     private cdRef: ChangeDetectorRef,
     private applicationRef: ApplicationRef,
     private datePipe: DatePipe,
@@ -76,68 +65,56 @@ export class DashboardComponent implements AfterViewInit {
   ) {}
 
   ngAfterViewInit() {
-    // TODO: Use a merge map to combine both getCurrentWeatherData and getTodaysWeatherData into one observable.
-    // TODO: Ensure to return some form of object, each key having todays and current data in it
-    // TODO: Only async pipe to the combined observable. We call both of these every minute anyway! May as well.
-    // TODO: To be fair, we should only have to call todays weather once per hour... But I can revisit this.
-    // TODO: Maybe use a pipe for temp formatting. Right not, I do it manually based on a switch
-    // TODO: But using a pipe could be helpful?
     if (isPlatformBrowser(this.platformId)) {
       this.applicationRef.isStable.pipe(first((isStable) => isStable)).subscribe(() => {
-        this.thisHourWeatherData$ = timer(0, 60000).pipe(
-          switchMap(() => this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")),
-          tap((data) => {
-            if (data[data.length - 1]?.temp) {
-              this.formattedTemp = this.formatTemp(data[data.length - 1].temp);
-            }
-            this.hasError = false;
-            this.isLoading = false;
-            this.cdRef.markForCheck();
+        this.weatherData$ = timer(0, 60000).pipe(
+          switchMap(() => {
+            return forkJoin({
+              current: this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")
+                .pipe(
+                  catchError(error => {
+                    console.error(error);
+                    this.hasError = true;
+                    this.isLoading = false;
+                    return of([]);
+                  }),
+                ),
+              today: this.weatherDataService.getTodaysWeatherData("80bb40b5fce97afec61866080fa08e01").pipe(
+                tap(() => {
+                  this.todaysWeatherDataHasError = false;
+                  this.isTodaysWeatherDataLoading = false;
+                }),
+                catchError(error => {
+                  console.error(error);
+                  this.todaysWeatherDataHasError = true;
+                  this.isTodaysWeatherDataLoading = false;
+                  return of([]);
+                }),
+              ),
+            })
           }),
-          catchError(error => {
-            console.log(error);
-            this.hasError = true;
-            this.isLoading = false;
-            return of(null);
+          tap(({current, today}) => {
+            if (current) {
+              if (current[current.length - 1]?.temp) {
+                this.formattedTemp = this.formatTemp(current[current.length - 1].temp);
+              }
+              this.hasError = false;
+              this.isLoading = false;
+              this.cdRef.markForCheck();
+            } else {
+              current = [];
+            }
+
+            if (!today) {
+              today = [];
+            }
+
+            return {current, today};
           }),
           shareReplay({ bufferSize: 1, refCount: true })
         );
-        this.getTodaysWeatherData();
-      })
-    }
-  }
-
-  getTodaysWeatherData() {
-    timer(0, 60000).pipe(switchMap(() => this.weatherDataService.getTodaysWeatherData("80bb40b5fce97afec61866080fa08e01")))
-      .subscribe({
-        next: data => {
-          this.ngZone.run(() => {
-            this.isTodaysWeatherDataLoading = false;
-            this.todaysWeatherDataHasError = false;
-            this.todaysWeatherData = data;
-            this.cdRef.markForCheck();
-          });
-        },
-        error: error => {
-          this.ngZone.run(() => {
-            this.isTodaysWeatherDataLoading = false;
-            this.todaysWeatherDataHasError = true;
-            console.error(error);
-            this.cdRef.markForCheck();
-          });
-        }
       });
-  }
-
-  onTempFormatChange() {
-    if (this.tempFormat === 'f') {
-      this.tempFormat = 'c';
-    } else {
-      this.tempFormat = 'f';
     }
-    this.formattedTemp = this.formatTemp(this.weatherData[this.weatherData.length - 1].temp);
-    console.log('Going to mark for check!');
-    this.cdRef.markForCheck();
   }
 
   formatTemp(temp: number): string {
@@ -228,13 +205,6 @@ export class DashboardComponent implements AfterViewInit {
 
   formatToC(temp: number): string {
     return temp.toFixed(2) + ' °C';
-  }
-  formatWindDirection(direction: number): string {
-    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-
-    const angle = direction % 360;
-    const index = Math.floor((angle + 22.5) / 45) % 8;
-    return directions[index];
   }
 
   protected readonly windSpeedChartConfig = windSpeedChartConfig;
