@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/ajcuddeback/nimbus/compare/v1.1.0...v1.2.0) (2025-08-13)
+
+
+### Features
+
+* refactoring rxjs code such that we only use 1 timer observable instead of 2 via a forkJoin ([d15e438](https://github.com/ajcuddeback/nimbus/commit/d15e438aa8af9d0caf93731e15fa70ea1c64f20a))
+* Working to improve reactivity by implementing rxjs and angular best practices ([009008d](https://github.com/ajcuddeback/nimbus/commit/009008d7a4ed87440716d9044c268b7c46276f3e))
+
+
+### Bug Fixes
+
+* Remvoing comented code ([0de807c](https://github.com/ajcuddeback/nimbus/commit/0de807c5817dd6738c1656f4fb0fbd7677e95acc))
+
 ## [1.1.0](https://github.com/ajcuddeback/nimbus/compare/v1.0.0...v1.1.0) (2025-08-08)
 
 
