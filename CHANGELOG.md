@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/ajcuddeback/nimbus/compare/v1.2.0...v1.2.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* Adding some minor cleanup ([cac3da1](https://github.com/ajcuddeback/nimbus/commit/cac3da1b3df3f6c9493cf4846a886d58c9690eb1))
+
 ## [1.2.0](https://github.com/ajcuddeback/nimbus/compare/v1.1.0...v1.2.0) (2025-08-13)
 
 
