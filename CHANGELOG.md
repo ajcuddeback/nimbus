@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0](https://github.com/ajcuddeback/nimbus/compare/v1.2.1...v1.3.0) (2025-09-06)
+
+
+### Features
+
+* Adding AI Summary support ([247dc94](https://github.com/ajcuddeback/nimbus/commit/247dc9416ea4d97fd8c10bf4586e1838558878b1))
+* Adding AI Summary to existing UI ([65f2e4b](https://github.com/ajcuddeback/nimbus/commit/65f2e4b36e87fbcd1ebe06da3bda20da7fbd173b))
+* Fixing some issues with SSR and improving loading handling ([8b6973b](https://github.com/ajcuddeback/nimbus/commit/8b6973b458f99d2f38c503adcee1bfcfad4ab2b5))
+
 ## [1.2.1](https://github.com/ajcuddeback/nimbus/compare/v1.2.0...v1.2.1) (2025-08-13)
 
 
