@@ -19,7 +19,7 @@ echarts.use([LineChart, CanvasRenderer, GridComponent, LegendComponent, VisualMa
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToolbarComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   providers: [

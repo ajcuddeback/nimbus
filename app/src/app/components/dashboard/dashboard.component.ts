@@ -27,7 +27,7 @@ import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
 import {PressureLineComponent} from './pressure-line/pressure-line.component';
 import {SkeletonModule} from 'primeng/skeleton';
 
-// RUn with  ng serve --host 127.0.0.1
+// Run with  ng serve --host 127.0.0.1
 
 @Component({
   selector: 'app-dashboard',
@@ -52,7 +52,7 @@ export class DashboardComponent implements OnInit {
   isTodaysWeatherDataLoading = true;
   hasError = false;
   todaysWeatherDataHasError = false;
-  weatherData$: Observable<{current: WeatherData[], today: WeatherData[]}>;
+  weatherData$: Observable<{current: WeatherData[], today: WeatherData[], summary: { summary: string }}>;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
   isBrowser: boolean;
@@ -91,9 +91,15 @@ export class DashboardComponent implements OnInit {
                   return of([]);
                 }),
               ),
+              summary: this.weatherDataService.getAISummary("80bb40b5fce97afec61866080fa08e01").pipe(
+                catchError(error => {
+                  console.error(error);
+                  return of({summary: "Could not retrieve AI Summary!"});
+                }),
+              ),
             })
           }),
-          tap(({current, today}) => {
+          tap(({current, today, summary}) => {
             if (current) {
               if (current[current.length - 1]?.temp) {
                 this.formattedTemp = this.formatTemp(current[current.length - 1].temp);
@@ -108,7 +114,7 @@ export class DashboardComponent implements OnInit {
               today = [];
             }
 
-            return {current, today};
+            return {current, today, summary};
           }),
           shareReplay({ bufferSize: 1, refCount: true })
         );

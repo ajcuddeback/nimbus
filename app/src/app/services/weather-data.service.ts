@@ -31,4 +31,12 @@ export class WeatherDataService {
 
     return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/today`, options);
   }
+
+  getAISummary(stationId: string): Observable<{ summary: string }> {
+    const options = {
+      params: new HttpParams().set('stationId', stationId)
+    }
+
+    return this.http.get<{ summary: string }>(`${this.backendEndpoint}/weatherSummary`, options);
+  }
 }

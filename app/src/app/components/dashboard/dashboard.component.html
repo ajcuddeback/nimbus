@@ -2,6 +2,9 @@
   <ng-container *ngTemplateOutlet="loading" />
 } @else {
   @if (weatherData$ | async; as weatherData; ) {
+    <p-card header="AI Summary">
+      <p>{{ weatherData.summary.summary }}</p>
+    </p-card>
     @let latestWeatherData = weatherData.current[weatherData.current.length - 1];
     <p-card header="Temp">
       Current: {{ formattedTemp }}
