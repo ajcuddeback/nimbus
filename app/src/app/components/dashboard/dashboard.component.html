@@ -1,48 +1,116 @@
-@if (weatherData$ | async; as weatherData; ) {
-  @let latestWeatherData = weatherData.current[weatherData.current.length - 1];
-  <p-card header="Temp">
-    Current: {{ formattedTemp }}
-    <br />
-    Feels Like: {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
-    <app-temp-line [tempData]="gatherTemps(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" [tempFormat]="tempFormat" />
-  </p-card>
-  <p-card header="Today's Temp Variablility">
-    Today's Peak Temp: {{ getPeakTemp(weatherData.today) }}
-    <app-temp-line [tempData]="gatherTemps(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" [tempFormat]="tempFormat" />
-  </p-card>
-  <p-card header="Humidity">
-    Current: {{ latestWeatherData.hum }}%
-    <app-humidity-line [humidity]="gatherHumidity(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
-  </p-card>
-  <p-card header="Today's Humidity Variablility">
-    Today's Peak Humidity: {{ getPeakHumidity(weatherData.today) }}
-    <app-humidity-line [humidity]="gatherHumidity(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
-  </p-card>
-  <p-card header="Pressure">
-    Current: {{ convertPressureToInches(latestWeatherData.pr) }} in
-    <app-pressure-line [pressures]="gatherPressures(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
-  </p-card>
-  <p-card header="Wind Speed">
-    Current: {{ latestWeatherData.windSpeed }} mph
-    <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
-  </p-card>
-  <p-card header="Today's Wind Speed Variablility">
-    <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
-  </p-card>
-  <p-card header="Wind Direction">
-    <app-compass [direction]="latestWeatherData.windDirection" />
-  </p-card>
-  <p-card header="Rainfall Total">
-    Current Total: {{ getRainTotal(weatherData.current) }}in.
-    <app-rainfall-line [rainfall]="gatherRainfall(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)" />
-  </p-card>
-  <p-card header="Today's Rainfall Total">
-    Today's Total: {{ getRainTotal(weatherData.today) }}in.
-    <app-rainfall-line [rainfall]="gatherRainfall(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)" />
-  </p-card>
-} @else if (isLoading) {
-  <div>Loading....</div>
-} @else if (hasError) {
-  <div>Errored!</div>
+@if (!isBrowser) {
+  <ng-container *ngTemplateOutlet="loading" />
+} @else {
+  @if (weatherData$ | async; as weatherData; ) {
+    <p-card header="AI Summary">
+      <p>{{ weatherData.summary.summary }}</p>
+    </p-card>
+    @let latestWeatherData = weatherData.current[weatherData.current.length - 1];
+    <p-card header="Temp">
+      Current: {{ formattedTemp }}
+      <br/>
+      Feels
+      Like: {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
+      <app-temp-line [tempData]="gatherTemps(weatherData.current)" [timestamps]="gatherTimestamps(weatherData.current)"
+                     [tempFormat]="tempFormat"/>
+    </p-card>
+    <p-card header="Today's Temp Variablility">
+      Today's Peak Temp: {{ getPeakTemp(weatherData.today) }}
+      <app-temp-line [tempData]="gatherTemps(weatherData.today)" [timestamps]="gatherTimestamps(weatherData.today)"
+                     [tempFormat]="tempFormat"/>
+    </p-card>
+    <p-card header="Humidity">
+      Current: {{ latestWeatherData.hum }}%
+      <app-humidity-line [humidity]="gatherHumidity(weatherData.current)"
+                         [timestamps]="gatherTimestamps(weatherData.current)"/>
+    </p-card>
+    <p-card header="Today's Humidity Variablility">
+      Today's Peak Humidity: {{ getPeakHumidity(weatherData.today) }}
+      <app-humidity-line [humidity]="gatherHumidity(weatherData.today)"
+                         [timestamps]="gatherTimestamps(weatherData.today)"/>
+    </p-card>
+    <p-card header="Pressure">
+      Current: {{ convertPressureToInches(latestWeatherData.pr) }} in
+      <app-pressure-line [pressures]="gatherPressures(weatherData.current)"
+                         [timestamps]="gatherTimestamps(weatherData.current)"/>
+    </p-card>
+    <p-card header="Wind Speed">
+      Current: {{ latestWeatherData.windSpeed }} mph
+      <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.current)"
+                     [timestamps]="gatherTimestamps(weatherData.current)"/>
+    </p-card>
+    <p-card header="Today's Wind Speed Variablility">
+      <app-wind-line [windSpeeds]="gatherWindSpeeds(weatherData.today)"
+                     [timestamps]="gatherTimestamps(weatherData.today)"/>
+    </p-card>
+    <p-card header="Wind Direction">
+      <app-compass [direction]="latestWeatherData.windDirection"/>
+    </p-card>
+    <p-card header="Rainfall Total">
+      Current Total: {{ getRainTotal(weatherData.current) }}in.
+      <app-rainfall-line [rainfall]="gatherRainfall(weatherData.current)"
+                         [timestamps]="gatherTimestamps(weatherData.current)"/>
+    </p-card>
+    <p-card header="Today's Rainfall Total">
+      Today's Total: {{ getRainTotal(weatherData.today) }}in.
+      <app-rainfall-line [rainfall]="gatherRainfall(weatherData.today)"
+                         [timestamps]="gatherTimestamps(weatherData.today)"/>
+    </p-card>
+  } @else if (isLoading) {
+    <ng-container *ngTemplateOutlet="loading" />
+  } @else if (hasError) {
+    <div>Errored!</div>
+  }
 }
 
+<ng-template #loading>
+  <p-card header="Temp">
+    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
+    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Today's Temp Variablility">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Humidity">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Today's Humidity Variablility">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Pressure">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Wind Speed">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Today's Wind Speed Variablility">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Wind Direction">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Rainfall Total">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+  <p-card header="Today's Rainfall Total">
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="2rem" class="mb-2" width="5rem" />
+    <p-skeleton height="25rem" />
+  </p-card>
+</ng-template>

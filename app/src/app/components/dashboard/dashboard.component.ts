@@ -1,18 +1,15 @@
 import {
-  AfterViewInit,
-  ApplicationRef,
   ChangeDetectorRef,
   Component,
-  Inject,
-  NgZone,
+  Inject, OnInit,
   PLATFORM_ID
 } from '@angular/core';
 import {WeatherDataService} from '../../services/weather-data.service';
 import {WeatherData} from '../../models/weather-data.interface';
-import {AsyncPipe, DatePipe, isPlatformBrowser} from '@angular/common';
+import {AsyncPipe, DatePipe, isPlatformBrowser, NgTemplateOutlet} from '@angular/common';
 import {
   catchError,
-  first, forkJoin,
+  forkJoin,
   Observable,
   of, shareReplay,
   switchMap,
@@ -28,8 +25,9 @@ import {HumidityLineComponent} from './humidity-line/humidity-line.component';
 import {CompassComponent} from './compass/compass.component';
 import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
 import {PressureLineComponent} from './pressure-line/pressure-line.component';
+import {SkeletonModule} from 'primeng/skeleton';
 
-// RUn with  ng serve --host 127.0.0.1
+// Run with  ng serve --host 127.0.0.1
 
 @Component({
   selector: 'app-dashboard',
@@ -43,30 +41,32 @@ import {PressureLineComponent} from './pressure-line/pressure-line.component';
     RainfallLineComponent,
     PressureLineComponent,
     AsyncPipe,
+    SkeletonModule,
+    NgTemplateOutlet
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements AfterViewInit {
+export class DashboardComponent implements OnInit {
   isLoading = true;
   isTodaysWeatherDataLoading = true;
   hasError = false;
   todaysWeatherDataHasError = false;
-  weatherData$: Observable<{current: WeatherData[], today: WeatherData[]}>;
+  weatherData$: Observable<{current: WeatherData[], today: WeatherData[], summary: { summary: string }}>;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
+  isBrowser: boolean;
 
   constructor(
     private weatherDataService: WeatherDataService,
     private cdRef: ChangeDetectorRef,
-    private applicationRef: ApplicationRef,
     private datePipe: DatePipe,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  ngAfterViewInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.applicationRef.isStable.pipe(first((isStable) => isStable)).subscribe(() => {
+  ngOnInit() {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+    if (this.isBrowser) {
         this.weatherData$ = timer(0, 60000).pipe(
           switchMap(() => {
             return forkJoin({
@@ -91,16 +91,21 @@ export class DashboardComponent implements AfterViewInit {
                   return of([]);
                 }),
               ),
+              summary: this.weatherDataService.getAISummary("80bb40b5fce97afec61866080fa08e01").pipe(
+                catchError(error => {
+                  console.error(error);
+                  return of({summary: "Could not retrieve AI Summary!"});
+                }),
+              ),
             })
           }),
-          tap(({current, today}) => {
+          tap(({current, today, summary}) => {
             if (current) {
               if (current[current.length - 1]?.temp) {
                 this.formattedTemp = this.formatTemp(current[current.length - 1].temp);
               }
               this.hasError = false;
-              this.isLoading = false;
-              this.cdRef.markForCheck();
+              this.isLoading = true;
             } else {
               current = [];
             }
@@ -109,11 +114,12 @@ export class DashboardComponent implements AfterViewInit {
               today = [];
             }
 
-            return {current, today};
+            return {current, today, summary};
           }),
           shareReplay({ bufferSize: 1, refCount: true })
         );
-      });
+        // Detect changes after initial assignment - as we are using onPush
+        this.cdRef.markForCheck();
     }
   }
 

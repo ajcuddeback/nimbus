@@ -13,12 +13,13 @@ import {
   VisualMapComponent
 } from 'echarts/components';
 import {DatePipe} from '@angular/common';
+import {ToolbarComponent} from './components/toolbar/toolbar.component';
 
 echarts.use([LineChart, CanvasRenderer, GridComponent, LegendComponent, VisualMapComponent, TooltipComponent, ToolboxComponent, GaugeChart]);
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, DashboardComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   providers: [
@@ -27,5 +28,4 @@ echarts.use([LineChart, CanvasRenderer, GridComponent, LegendComponent, VisualMa
   ]
 })
 export class AppComponent {
-  title = 'app';
 }

@@ -1,0 +1,57 @@
+.loader {
+  display: flex;
+  p {
+    margin: 0 5px 0 0 !important;
+  }
+}
+
+.dots {
+  display: flex;
+}
+
+.dots > * {
+  background-color: blue;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+.dot1 {
+  animation: 1s infinite normal dot1-animation;
+}
+
+@keyframes dot1-animation {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-7px);
+  }
+}
+
+.dot2 {
+  animation: 1s infinite normal dot2-animation;
+}
+
+@keyframes dot2-animation {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.dot3 {
+  animation: 1s infinite normal dot3-animation;
+}
+
+@keyframes dot3-animation {
+  0%, 100% {
+    transform: translateY(0);  /* start and end at baseline */
+  }
+  75% {
+    transform: translateY(-7px);
+  }
+}

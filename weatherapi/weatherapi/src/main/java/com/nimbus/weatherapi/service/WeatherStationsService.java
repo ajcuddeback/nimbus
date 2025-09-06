@@ -1,6 +1,5 @@
 package com.nimbus.weatherapi.service;
 
-import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.model.WeatherStations;
 import com.nimbus.weatherapi.repository.WeatherStationsDataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -44,5 +43,13 @@ public class WeatherStationsService {
                 .collectList()
                 .zipWith(this.weatherStationsDataRepository.count())
                 .map(p -> new PageImpl<>(p.getT1(), pageable, p.getT2()));
+    }
+
+    // TODO: This is being used for weather summary class - as this scales, it could be best to handle this differently
+    // This way, if I want multiple nodes running for AI summaries, I don't fetch ALL weather stations, just sub set
+    public Flux<WeatherStations> getAllWeatherStations() {
+        return mongoTemplate
+                .query(WeatherStations.class)
+                .all();
     }
 }

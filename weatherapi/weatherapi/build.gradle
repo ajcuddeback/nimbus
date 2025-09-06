@@ -21,6 +21,12 @@ repositories {
 	maven {
 		url "https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on"
 	}
+	maven {
+		url "https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-open-ai-spring-boot-starter"
+	}
+	maven {
+		url "https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-spring-boot-starter"
+	}
 }
 
 dependencies {
@@ -29,6 +35,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5'
 	implementation 'org.bouncycastle:bcprov-jdk18on:1.81'
+	implementation 'dev.langchain4j:langchain4j-spring-boot-starter:1.4.0-beta10'
+	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:1.4.0-beta10'
+	implementation 'dev.langchain4j:langchain4j-reactor:1.4.0-beta10'
 	compileOnly("org.projectlombok:lombok:1.18.38")
 	annotationProcessor("org.projectlombok:lombok:1.18.38")
 	testCompileOnly("org.projectlombok:lombok:1.18.38")
