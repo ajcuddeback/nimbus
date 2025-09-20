@@ -1,6 +1,6 @@
 package com.nimbus.weatherapi.controller;
 
-import com.nimbus.weatherapi.components.WeatherSummaryCache;
+import com.nimbus.weatherapi.cache.WeatherSummaryCache;
 import com.nimbus.weatherapi.model.llm.WeatherSummary;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +26,6 @@ public class WeatherSummaryController {
             @RequestParam String stationId
     ) {
         final WeatherSummary aiSummary = weatherSummaryCache.getAISummary(stationId);
-        log.info("Ai summary is: {}", aiSummary.summary());
         return Mono.just(aiSummary);
     }
 }

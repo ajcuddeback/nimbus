@@ -3,9 +3,10 @@ package com.nimbus.weatherapi.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbus.weatherapi.components.WeatherDataCache;
+import com.nimbus.weatherapi.cache.WeatherDataCache;
 import com.nimbus.weatherapi.model.Lightning;
 import com.nimbus.weatherapi.model.WeatherRecord;
+import com.nimbus.weatherapi.model.WeatherStationRepresentation;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -24,6 +25,7 @@ public class WeatherDataCallback implements MqttCallback {
     private final MqttService mqttService;
     private final LightningService lightningService;
     private final WeatherDataCache weatherDataCache;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WeatherDataCallback(
             StationRegistrationService stationRegistrationService,
@@ -70,16 +72,10 @@ public class WeatherDataCallback implements MqttCallback {
                 log.error("Failed", e);
             }
         } else if (topic.equalsIgnoreCase("stationId/request")) {
-            final ObjectMapper mapper = new ObjectMapper();
             try {
-                final JsonNode jsonNode = mapper.readTree(new String(message.getPayload()));
-
                 this.stationRegistrationService.registerWeatherStation(
-                        jsonNode.get("city").asText(),
-                        jsonNode.get("state").asText(),
-                        jsonNode.get("lon").asDouble(),
-                        jsonNode.get("lat").asDouble()
-                ).flatMap(data ->{
+                        objectMapper.readValue(new String(message.getPayload()), WeatherStationRepresentation.class)
+                ).flatMap(data -> {
                     try {
                         this.mqttService.publishEvent("stationId", data.getBytes(StandardCharsets.UTF_8));
                     } catch (MqttException e) {

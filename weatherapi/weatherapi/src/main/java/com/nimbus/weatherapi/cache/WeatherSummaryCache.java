@@ -1,4 +1,4 @@
-package com.nimbus.weatherapi.components;
+package com.nimbus.weatherapi.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbus.weatherapi.model.WeatherRecord;
@@ -42,6 +42,8 @@ public class WeatherSummaryCache {
     }
 
     // TODO: Maybe add a check to see if there is a drastic difference between current and previous weather data to run this
+    // TODO: If we want different messages every refresh, we could create a few summaries at a time...
+    // TODO: This would reduce the number of times we'd have to go to the API and give users the feeling it's AI generated
     @Scheduled(cron = "0 */10 * * * *")
     public void generateSummaryEveryFiveMinutes() {
         log.info("Generating AI Summary...");
@@ -55,7 +57,7 @@ public class WeatherSummaryCache {
                         return Mono.empty();
                     }
 
-                    return this.weatherSummaryService.getSummary(records.getFirst())
+                    return this.weatherSummaryService.getSummary(records.getLast())
                             .timeout(Duration.ofSeconds(20))
                             .onErrorResume(error -> {
                                 log.error("Could not retrieve AI Summary!");

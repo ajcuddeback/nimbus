@@ -1,6 +1,6 @@
 package com.nimbus.weatherapi.controller;
 
-import com.nimbus.weatherapi.components.WeatherDataCache;
+import com.nimbus.weatherapi.cache.WeatherDataCache;
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.model.WeatherRecord;
 import com.nimbus.weatherapi.service.WeatherDataService;
@@ -26,6 +26,7 @@ public class WeatherDataController {
         this.weatherDataCache = weatherDataCache;
     }
 
+    // TODO: Can probably go away? Pageability coule be useful in history API though - based on filter range
     @GetMapping
     public Mono<Page<WeatherData>> getWeatherDataByLocation(
             @RequestParam String stationId,
@@ -34,6 +35,7 @@ public class WeatherDataController {
         return weatherDataService.getWeatherDataByLocation(stationId, pageable);
     }
 
+    // TODO: To be changed to this minute - not this hour?
     @GetMapping("/current")
     public Mono<List<WeatherRecord>> getLatestWeatherData(
             @RequestParam String stationId
@@ -42,6 +44,7 @@ public class WeatherDataController {
     }
 
 
+    // TODO: To be changed to history
     @GetMapping("/today")
     public Flux<WeatherData> getTodaysWeather(
             @RequestParam String stationId,

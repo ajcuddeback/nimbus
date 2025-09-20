@@ -1,4 +1,4 @@
-package com.nimbus.weatherapi.components;
+package com.nimbus.weatherapi.cache;
 
 import com.nimbus.weatherapi.model.WeatherRecord;
 import com.nimbus.weatherapi.service.WeatherAggregator;

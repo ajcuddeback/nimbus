@@ -1,6 +1,6 @@
 package com.nimbus.weatherapi.service;
 
-import com.nimbus.weatherapi.components.WeatherDataCache;
+import com.nimbus.weatherapi.cache.WeatherDataCache;
 import com.nimbus.weatherapi.utils.MqttSSLUtility;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -23,6 +23,7 @@ public final class MqttService {
     private final LightningService lightningService;
     private final WeatherDataCache weatherDataCache;
 
+    // TODO: Would be nice to move this to a @ConfigurationProperties class - would make this much cleaner!
     @Value("${mqtt.broker.url}")
     private String brokerUrl;
 

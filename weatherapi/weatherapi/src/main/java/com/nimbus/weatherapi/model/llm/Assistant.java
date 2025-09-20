@@ -1,4 +1,4 @@
-package com.nimbus.weatherapi.model;
+package com.nimbus.weatherapi.model.llm;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.spring.AiService;

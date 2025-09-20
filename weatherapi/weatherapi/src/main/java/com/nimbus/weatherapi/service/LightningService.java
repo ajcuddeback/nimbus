@@ -3,7 +3,6 @@ package com.nimbus.weatherapi.service;
 import com.nimbus.weatherapi.model.Lightning;
 import com.nimbus.weatherapi.repository.LightningRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 @Slf4j
