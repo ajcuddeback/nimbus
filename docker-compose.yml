@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./weatherapi/weatherapi
+      dockerfile: Dockerfile
+    image: nimbus-backend:latest
+    ports:
+      - "8080:8080"
+    env_file:
+      - /etc/nimbus.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: nimbus-frontend:latest
+    ports:
+      - "4000:4000"
+    env_file:
+      - /etc/nimbus.env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

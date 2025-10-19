@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  backend:
+    image: gradle:9-jdk21
+    working_dir: /workspace
+    env_file:
+      - ./.env
+    volumes:
+      - ./weatherapi/weatherapi:/workspace:delegated
+      - ~/.gradle:/home/gradle/.gradle
+    command: ["/bin/sh", "-c", "./gradlew bootRun"]
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  frontend:
+    image: node:18-bullseye
+    working_dir: /workspace
+    env_file:
+      - ./.env
+    volumes:
+      - ./app:/workspace:delegated
+      - /workspace/node_modules
+    command: ["/bin/sh", "-c", "npm install --legacy-peer-deps && npm run start -- --host 0.0.0.0"]
+    ports:
+      - "4200:4200"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+# Usage: docker compose -f docker-compose.dev.yml up --build
