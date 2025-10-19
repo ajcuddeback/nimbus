@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/ajcuddeback/nimbus/compare/v1.3.0...v1.3.1) (2025-10-19)
+
+
+### Bug Fixes
+
+* Adding dockerfiles ([4cc6ed9](https://github.com/ajcuddeback/nimbus/commit/4cc6ed9f993fb4c39cde995e298eef1c1e0bec9f))
+
 ## [1.3.0](https://github.com/ajcuddeback/nimbus/compare/v1.2.1...v1.3.0) (2025-09-06)
 
 
