@@ -26,6 +26,7 @@ import {CompassComponent} from './compass/compass.component';
 import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
 import {PressureLineComponent} from './pressure-line/pressure-line.component';
 import {SkeletonModule} from 'primeng/skeleton';
+import {ApiResponse} from '../../models/api.interface';
 
 // Run with  ng serve --host 127.0.0.1
 
@@ -49,10 +50,8 @@ import {SkeletonModule} from 'primeng/skeleton';
 })
 export class DashboardComponent implements OnInit {
   isLoading = true;
-  isTodaysWeatherDataLoading = true;
   hasError = false;
-  todaysWeatherDataHasError = false;
-  weatherData$: Observable<{current: WeatherData[], today: WeatherData[], summary: { summary: string }}>;
+  weatherData$: Observable<{current: ApiResponse<WeatherData[]>, today: ApiResponse<WeatherData[]>, summary: ApiResponse<{ summary: string }>}>;
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
   isBrowser: boolean;
@@ -70,48 +69,22 @@ export class DashboardComponent implements OnInit {
         this.weatherData$ = timer(0, 60000).pipe(
           switchMap(() => {
             return forkJoin({
-              current: this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01")
-                .pipe(
-                  catchError(error => {
-                    console.error(error);
-                    this.hasError = true;
-                    this.isLoading = false;
-                    return of([]);
-                  }),
-                ),
-              today: this.weatherDataService.getTodaysWeatherData("80bb40b5fce97afec61866080fa08e01").pipe(
-                tap(() => {
-                  this.todaysWeatherDataHasError = false;
-                  this.isTodaysWeatherDataLoading = false;
-                }),
-                catchError(error => {
-                  console.error(error);
-                  this.todaysWeatherDataHasError = true;
-                  this.isTodaysWeatherDataLoading = false;
-                  return of([]);
-                }),
-              ),
-              summary: this.weatherDataService.getAISummary("80bb40b5fce97afec61866080fa08e01").pipe(
-                catchError(error => {
-                  console.error(error);
-                  return of({summary: "Could not retrieve AI Summary!"});
-                }),
-              ),
+              current: this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01"),
+              today: this.weatherDataService.getTodaysWeatherData("80bb40b5fce97afec61866080fa08e01"),
+              summary: this.weatherDataService.getAISummary("80bb40b5fce97afec61866080fa08e01")
             })
           }),
           tap(({current, today, summary}) => {
-            if (current) {
-              if (current[current.length - 1]?.temp) {
-                this.formattedTemp = this.formatTemp(current[current.length - 1].temp);
+            if (current.state === 'success' && current.data) {
+              if (current.data[current.data.length - 1]?.temp) {
+                this.formattedTemp = this.formatTemp(current.data[current.data.length - 1].temp);
               }
               this.hasError = false;
               this.isLoading = true;
-            } else {
-              current = [];
             }
 
-            if (!today) {
-              today = [];
+            if (today.state === 'success' && !today.data) {
+              today.data = [];
             }
 
             return {current, today, summary};
@@ -132,11 +105,19 @@ export class DashboardComponent implements OnInit {
   }
 
   getPeakTemp(weatherData: WeatherData[]): string {
-    return this.formatTemp(Math.max(...weatherData.map(data => data.temp)));
+    const peak = Math.max(...weatherData.map(data => data.temp));
+    if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
+      return 'Peak Temp not available';
+    }
+    return this.formatTemp(peak);
   }
 
   getPeakHumidity(weatherData: WeatherData[]): string {
-    return Math.max(...weatherData.map(data => data.hum)) + '%';
+    const peak = Math.max(...weatherData.map(data => data.hum));
+    if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
+      return 'Peak Humidity not available';
+    }
+    return peak + '%';
   }
 
   calculateFeelsLikeTemp(tempC: number, humidity: number, windMph: number) {

@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import {HttpClient, HttpParams} from '@angular/common/http';
+import {HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {WeatherData} from '../models/weather-data.interface';
 import { environment } from '../../environments/environment';
+import {ApiService} from './api.service';
+import {ApiResponse} from '../models/api.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -11,32 +13,27 @@ export class WeatherDataService {
   backendEndpoint: string;
 
   constructor(
-    private http: HttpClient,
+    private apiService: ApiService
   ) {
     this.backendEndpoint = environment.WEATHER_API_ENDPOINT;
   }
 
-  getCurrentWeatherData(stationId: string): Observable<WeatherData[]> {
-    const options = {
-      params: new HttpParams().set('stationId', stationId)
-    }
-    return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/current`, options);
+  getCurrentWeatherData(stationId: string): Observable<ApiResponse<WeatherData[]>> {
+    const params = new HttpParams().set('stationId', stationId)
+
+    return this.apiService.get(`${this.backendEndpoint}/weatherData/current`, params)
   }
 
-  getTodaysWeatherData(stationId: string): Observable<WeatherData[]> {
+  getTodaysWeatherData(stationId: string): Observable<ApiResponse<WeatherData[]>> {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const options = {
-      params: new HttpParams().set('stationId', stationId).set('timezone', timeZone)
-    }
+    const params = new HttpParams().set('stationId', stationId).set('timezone', timeZone)
 
-    return this.http.get<WeatherData[]>(`${this.backendEndpoint}/weatherData/today`, options);
+    return this.apiService.get(`${this.backendEndpoint}/weatherData/today`, params);
   }
 
-  getAISummary(stationId: string): Observable<{ summary: string }> {
-    const options = {
-      params: new HttpParams().set('stationId', stationId)
-    }
+  getAISummary(stationId: string): Observable<ApiResponse<{ summary: string }>> {
+    const params = new HttpParams().set('stationId', stationId)
 
-    return this.http.get<{ summary: string }>(`${this.backendEndpoint}/weatherSummary`, options);
+    return this.apiService.get(`${this.backendEndpoint}/weatherSummary`, params);
   }
 }
