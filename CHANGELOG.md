@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/ajcuddeback/nimbus/compare/v1.3.1...v1.3.2) (2025-11-01)
+
+
+### Bug Fixes
+
+* Adding some minor improvements to error/loading handling in prep for more API calls and updating packages ([a38a5af](https://github.com/ajcuddeback/nimbus/commit/a38a5af366839adc1ff988e28dc33a10a91db982))
+* Fixing docker files ([f9592fc](https://github.com/ajcuddeback/nimbus/commit/f9592fcce62022939cac23a2176853250235d2a7))
+
 ## [1.3.1](https://github.com/ajcuddeback/nimbus/compare/v1.3.0...v1.3.1) (2025-10-19)
 
 
