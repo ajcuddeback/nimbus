@@ -25,7 +25,7 @@
     "@primeuix/themes": "^1.2.5",
     "dotenv": "^16.6.1",
     "echarts": "^5.6.0",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "ngx-echarts": "^20.0.2",
     "primeng": "^20.0.0-rc.3",
     "remeda": "^2.26.1",
