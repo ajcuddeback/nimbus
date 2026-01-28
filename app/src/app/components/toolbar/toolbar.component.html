@@ -1,6 +1,11 @@
 <p-toolbar>
-  <ng-template #start >
-    <p-button routerLink="/" label="Current Weather" text plain />
-    <p-button routerLink="history" label="Historical Weather" text plain />
+  <ng-template #start>
+    <div class="toolbar-brand">
+      <span class="brand-name">Nimbus</span>
+    </div>
+  </ng-template>
+  <ng-template #end>
+    <p-button routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}" label="Weather" icon="pi pi-cloud" text plain />
+    <p-button routerLink="/charts" routerLinkActive="active-link" label="Charts" icon="pi pi-chart-line" text plain />
   </ng-template>
 </p-toolbar>

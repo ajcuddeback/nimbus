@@ -8,42 +8,38 @@ import {WeatherDataService} from '../../services/weather-data.service';
 import {WeatherData} from '../../models/weather-data.interface';
 import {AsyncPipe, DatePipe, isPlatformBrowser, NgTemplateOutlet} from '@angular/common';
 import {
-  catchError,
   forkJoin,
   Observable,
-  of, shareReplay,
+  shareReplay,
   switchMap,
   tap,
   timer
 } from 'rxjs';
 import {ButtonModule} from 'primeng/button';
 import {CardModule} from 'primeng/card';
-import {windSpeedChartConfig} from './chart-configs/wind-speed-chart.config';
-import {TempLineComponent} from './temp-line/temp-line.component';
-import {WindLineComponent} from './wind-line/wind-line.component';
-import {HumidityLineComponent} from './humidity-line/humidity-line.component';
-import {CompassComponent} from './compass/compass.component';
-import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
-import {PressureLineComponent} from './pressure-line/pressure-line.component';
 import {SkeletonModule} from 'primeng/skeleton';
+import {SelectButtonModule} from 'primeng/selectbutton';
+import {FormsModule} from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import {ApiResponse} from '../../models/api.interface';
 
-// Run with  ng serve --host 127.0.0.1
+interface HourlyForecast {
+  time: string;
+  temp: number;
+  humidity: number;
+}
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     ButtonModule,
     CardModule,
-    TempLineComponent,
-    WindLineComponent,
-    HumidityLineComponent,
-    CompassComponent,
-    RainfallLineComponent,
-    PressureLineComponent,
     AsyncPipe,
     SkeletonModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    SelectButtonModule,
+    FormsModule,
+    RouterLink
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -55,6 +51,13 @@ export class DashboardComponent implements OnInit {
   tempFormat: "f" | "c" = "f";
   formattedTemp: string;
   isBrowser: boolean;
+
+  tempOptions = [
+    { label: '°F', value: 'f' },
+    { label: '°C', value: 'c' }
+  ];
+
+  private latestTemp: number = 0;
 
   constructor(
     private weatherDataService: WeatherDataService,
@@ -77,7 +80,8 @@ export class DashboardComponent implements OnInit {
           tap(({current, today, summary}) => {
             if (current.state === 'success' && current.data) {
               if (current.data[current.data.length - 1]?.temp) {
-                this.formattedTemp = this.formatTemp(current.data[current.data.length - 1].temp);
+                this.latestTemp = current.data[current.data.length - 1].temp;
+                this.formattedTemp = this.formatTemp(this.latestTemp);
               }
               this.hasError = false;
               this.isLoading = true;
@@ -91,8 +95,13 @@ export class DashboardComponent implements OnInit {
           }),
           shareReplay({ bufferSize: 1, refCount: true })
         );
-        // Detect changes after initial assignment - as we are using onPush
         this.cdRef.markForCheck();
+    }
+  }
+
+  onTempFormatChange(): void {
+    if (this.latestTemp) {
+      this.formattedTemp = this.formatTemp(this.latestTemp);
     }
   }
 
@@ -105,19 +114,75 @@ export class DashboardComponent implements OnInit {
   }
 
   getPeakTemp(weatherData: WeatherData[]): string {
+    if (!weatherData || weatherData.length === 0) {
+      return '--';
+    }
     const peak = Math.max(...weatherData.map(data => data.temp));
     if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
-      return 'Peak Temp not available';
+      return '--';
     }
     return this.formatTemp(peak);
   }
 
+  getMinTemp(weatherData: WeatherData[]): string {
+    if (!weatherData || weatherData.length === 0) {
+      return '--';
+    }
+    const min = Math.min(...weatherData.map(data => data.temp));
+    if (min === Number.NEGATIVE_INFINITY || min === Number.POSITIVE_INFINITY) {
+      return '--';
+    }
+    return this.formatTemp(min);
+  }
+
   getPeakHumidity(weatherData: WeatherData[]): string {
+    if (!weatherData || weatherData.length === 0) {
+      return '--';
+    }
     const peak = Math.max(...weatherData.map(data => data.hum));
     if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
-      return 'Peak Humidity not available';
+      return '--';
     }
     return peak + '%';
+  }
+
+  getMaxWindSpeed(weatherData: WeatherData[]): number {
+    if (!weatherData || weatherData.length === 0) {
+      return 0;
+    }
+    const max = Math.max(...weatherData.map(data => data.windSpeed));
+    if (max === Number.NEGATIVE_INFINITY || max === Number.POSITIVE_INFINITY) {
+      return 0;
+    }
+    return Math.round(max * 10) / 10;
+  }
+
+  getWindDirectionLabel(degrees: number): string {
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const index = Math.round(degrees / 45) % 8;
+    return directions[index];
+  }
+
+  getHourlyForecast(weatherData: WeatherData[]): HourlyForecast[] {
+    if (!weatherData || weatherData.length === 0) {
+      return [];
+    }
+
+    // Sample data at roughly hourly intervals (take every ~12th reading assuming 5-min intervals)
+    const hourlyData: HourlyForecast[] = [];
+    const interval = Math.max(1, Math.floor(weatherData.length / 12));
+
+    for (let i = 0; i < weatherData.length && hourlyData.length < 12; i += interval) {
+      const data = weatherData[i];
+      const date = new Date(data.timestamp * 1000);
+      hourlyData.push({
+        time: this.datePipe.transform(date, 'h a') ?? '',
+        temp: data.temp,
+        humidity: data.hum
+      });
+    }
+
+    return hourlyData;
   }
 
   calculateFeelsLikeTemp(tempC: number, humidity: number, windMph: number) {
@@ -151,49 +216,22 @@ export class DashboardComponent implements OnInit {
     return Math.round(tempC * 10) / 10;
   }
 
-  gatherTimestamps(weatherData: WeatherData[]): string[] {
-    return weatherData.map(data => {
-      const date = new Date(data.timestamp * 1000);
-      return this.datePipe.transform(date, 'h:mm a') ?? '';
-    })
-  }
-
-  gatherWindSpeeds(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.windSpeed);
-  }
-
-  gatherTemps(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.temp);
-  }
-
-  gatherRainfall(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => Math.round((data.rainfall / 25.4) * 100) / 100);
-  }
-
-  gatherPressures(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => this.convertPressureToInches(data.pr));
-  }
-
-  gatherHumidity(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.hum);
-  }
-
   convertPressureToInches(pressure: number): number {
     return +(pressure * 0.02953).toFixed(2)
   }
 
   getRainTotal(weatherData: WeatherData[]): number {
+    if (!weatherData || weatherData.length === 0) {
+      return 0;
+    }
     return Math.round(weatherData.reduce((accumulator, currentValue) => accumulator + (currentValue.rainfall / 25.4), 0) * 100) / 100;
   }
 
   formatToF(temp: number): string {
-    return (temp * (9/5) + 32).toFixed(2) + ' °F';
+    return (temp * (9/5) + 32).toFixed(0) + '°F';
   }
 
   formatToC(temp: number): string {
-    return temp.toFixed(2) + ' °C';
+    return temp.toFixed(0) + '°C';
   }
-
-  protected readonly windSpeedChartConfig = windSpeedChartConfig;
-
 }

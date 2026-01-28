@@ -1,0 +1,212 @@
+.charts-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--p-orange-500);
+  }
+}
+
+// Header
+.charts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--p-text-color);
+  }
+}
+
+.back-button {
+  ::ng-deep .p-button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+// Tabs
+.chart-tabs {
+  ::ng-deep {
+    .p-tablist {
+      margin-bottom: 1.5rem;
+    }
+
+    .p-tab {
+      padding: 0.75rem 1.5rem;
+    }
+  }
+}
+
+// Charts Grid
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.chart-card {
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+
+  &.compass-card {
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--p-text-color);
+  }
+}
+
+.current-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--p-primary-600);
+}
+
+.stat-range {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  .high {
+    color: var(--p-orange-500);
+  }
+
+  .low {
+    color: var(--p-blue-500);
+  }
+}
+
+.chart-container {
+  min-height: 250px;
+
+  app-temp-line,
+  app-humidity-line,
+  app-pressure-line,
+  app-wind-line,
+  app-rainfall-line {
+    display: block;
+    width: 100%;
+    height: 250px;
+  }
+
+  app-compass {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: 250px;
+  }
+}
+
+.compass-container {
+  display: flex;
+  justify-content: center;
+}
+
+// No Data State
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+
+  i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--p-primary-400);
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .charts-page {
+    padding: 0.75rem;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-container {
+    min-height: 200px;
+
+    app-temp-line,
+    app-humidity-line,
+    app-pressure-line,
+    app-wind-line,
+    app-rainfall-line,
+    app-compass {
+      height: 200px;
+    }
+  }
+}

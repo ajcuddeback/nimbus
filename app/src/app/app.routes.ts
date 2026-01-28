@@ -6,7 +6,7 @@ export const routes: Routes = [
     loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
   },
   {
-    path: 'history',
-    loadComponent: () => import('./components/historical/historical.component').then(m => m.HistoricalComponent),
+    path: 'charts',
+    loadComponent: () => import('./components/charts/charts.component').then(m => m.ChartsComponent),
   }
 ];

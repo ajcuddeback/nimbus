@@ -1,121 +1,158 @@
 @if (!isBrowser) {
   <ng-container *ngTemplateOutlet="loading" />
 } @else {
-  @if (weatherData$ | async; as weatherData; ) {
+  @if (weatherData$ | async; as weatherData) {
     @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
       <ng-container *ngTemplateOutlet="loading" />
     } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
-      <p>Failed</p>
+      <div class="error-container">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>Unable to load weather data. Please try again later.</p>
+      </div>
     } @else {
-      <p-card header="AI Summary">
-        <p>{{ weatherData.summary.data.summary }}</p>
-      </p-card>
       @let latestWeatherData = weatherData.current.data[weatherData.current.data.length - 1];
-      @let currentWeatherData = weatherData.current.data;
       @let todaysWeatherData = weatherData.today.data;
-      <p-card header="Temp">
-        Current: {{ formattedTemp }}
-        <br/>
-        Feels
-        Like: {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
-        <app-temp-line [tempData]="gatherTemps(currentWeatherData)" [timestamps]="gatherTimestamps(currentWeatherData)"
-                       [tempFormat]="tempFormat"/>
-      </p-card>
-      <p-card header="Today's Temp Variablility">
-        Today's Peak Temp: {{ getPeakTemp(todaysWeatherData) }}
-        <app-temp-line [tempData]="gatherTemps(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)"
-                       [tempFormat]="tempFormat"/>
-      </p-card>
-      <p-card header="Humidity">
-        Current: {{ latestWeatherData.hum }}%
-        <app-humidity-line [humidity]="gatherHumidity(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Humidity Variablility">
-        Today's Peak Humidity: {{ getPeakHumidity(todaysWeatherData) }}
-        <app-humidity-line [humidity]="gatherHumidity(todaysWeatherData)"
-                           [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
-      <p-card header="Pressure">
-        Current: {{ convertPressureToInches(latestWeatherData.pr) }} in
-        <app-pressure-line [pressures]="gatherPressures(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Wind Speed">
-        Current: {{ latestWeatherData.windSpeed }} mph
-        <app-wind-line [windSpeeds]="gatherWindSpeeds(currentWeatherData)"
-                       [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Wind Speed Variablility">
-        <app-wind-line [windSpeeds]="gatherWindSpeeds(todaysWeatherData)"
-                       [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
-      <p-card header="Wind Direction">
-        <app-compass [direction]="latestWeatherData.windDirection"/>
-      </p-card>
-      <p-card header="Rainfall Total">
-        Current Total: {{ getRainTotal(currentWeatherData) }}in.
-        <app-rainfall-line [rainfall]="gatherRainfall(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Rainfall Total">
-        Today's Total: {{ getRainTotal(todaysWeatherData) }}in.
-        <app-rainfall-line [rainfall]="gatherRainfall(todaysWeatherData)"
-                           [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
 
+      <div class="weather-app">
+        <!-- Main Temperature Display -->
+        <div class="main-weather-card">
+          <div class="temperature-section">
+            <div class="current-temp">{{ formattedTemp }}</div>
+            <div class="feels-like">
+              Feels like {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
+            </div>
+            <div class="temp-toggle">
+              <p-selectbutton
+                [options]="tempOptions"
+                [(ngModel)]="tempFormat"
+                (onChange)="onTempFormatChange()"
+                [allowEmpty]="false"
+              />
+            </div>
+          </div>
+          <div class="weather-summary">
+            <div class="summary-label">Current Conditions</div>
+            <p class="summary-text">{{ weatherData.summary.data.summary }}</p>
+          </div>
+        </div>
+
+        <!-- Today's High/Low -->
+        <div class="today-stats">
+          <div class="stat-item">
+            <span class="stat-label">Today's High</span>
+            <span class="stat-value high">{{ getPeakTemp(todaysWeatherData) }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Today's Low</span>
+            <span class="stat-value low">{{ getMinTemp(todaysWeatherData) }}</span>
+          </div>
+        </div>
+
+        <!-- Current Conditions Grid -->
+        <div class="conditions-grid">
+          <div class="condition-card">
+            <div class="condition-icon">
+              <i class="pi pi-sun"></i>
+            </div>
+            <div class="condition-info">
+              <span class="condition-label">Humidity</span>
+              <span class="condition-value">{{ latestWeatherData.hum }}%</span>
+            </div>
+          </div>
+
+          <div class="condition-card">
+            <div class="condition-icon">
+              <i class="pi pi-gauge"></i>
+            </div>
+            <div class="condition-info">
+              <span class="condition-label">Pressure</span>
+              <span class="condition-value">{{ convertPressureToInches(latestWeatherData.pr) }} in</span>
+            </div>
+          </div>
+
+          <div class="condition-card">
+            <div class="condition-icon wind-icon">
+              <i class="pi pi-directions"></i>
+            </div>
+            <div class="condition-info">
+              <span class="condition-label">Wind</span>
+              <span class="condition-value">{{ latestWeatherData.windSpeed }} mph {{ getWindDirectionLabel(latestWeatherData.windDirection) }}</span>
+            </div>
+          </div>
+
+          <div class="condition-card">
+            <div class="condition-icon">
+              <i class="pi pi-cloud"></i>
+            </div>
+            <div class="condition-info">
+              <span class="condition-label">Rainfall Today</span>
+              <span class="condition-value">{{ getRainTotal(todaysWeatherData) }} in</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly Forecast -->
+        @if (getHourlyForecast(todaysWeatherData).length > 0) {
+          <div class="hourly-section">
+            <h3 class="section-title">Today's Forecast</h3>
+            <div class="hourly-scroll">
+              @for (hour of getHourlyForecast(todaysWeatherData); track hour.time) {
+                <div class="hourly-item">
+                  <span class="hour-time">{{ hour.time }}</span>
+                  <span class="hour-temp">{{ formatTemp(hour.temp) }}</span>
+                  <span class="hour-humidity">{{ hour.humidity }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <span class="quick-label">Peak Humidity</span>
+            <span class="quick-value">{{ getPeakHumidity(todaysWeatherData) }}</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-label">Max Wind</span>
+            <span class="quick-value">{{ getMaxWindSpeed(todaysWeatherData) }} mph</span>
+          </div>
+        </div>
+
+        <!-- Link to Charts -->
+        <div class="charts-link">
+          <p-button
+            label="View Detailed Charts"
+            icon="pi pi-chart-line"
+            routerLink="/charts"
+            [outlined]="true"
+          />
+        </div>
+      </div>
     }
   }
 }
 
 <ng-template #loading>
-  <p-card header="Temp">
-    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
-    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Temp Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Humidity">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Humidity Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Pressure">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Wind Speed">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Wind Speed Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Wind Direction">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Rainfall Total">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Rainfall Total">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
+  <div class="weather-app">
+    <div class="main-weather-card">
+      <div class="temperature-section">
+        <p-skeleton width="180px" height="80px" class="mb-2" />
+        <p-skeleton width="120px" height="24px" />
+      </div>
+      <div class="weather-summary">
+        <p-skeleton width="100%" height="60px" />
+      </div>
+    </div>
+    <div class="today-stats">
+      <p-skeleton width="100px" height="50px" />
+      <p-skeleton width="100px" height="50px" />
+    </div>
+    <div class="conditions-grid">
+      <p-skeleton width="100%" height="80px" />
+      <p-skeleton width="100%" height="80px" />
+      <p-skeleton width="100%" height="80px" />
+      <p-skeleton width="100%" height="80px" />
+    </div>
+  </div>
 </ng-template>

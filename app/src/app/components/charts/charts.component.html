@@ -1,0 +1,245 @@
+@if (!isBrowser) {
+  <ng-container *ngTemplateOutlet="loading" />
+} @else {
+  @if (weatherData$ | async; as weatherData) {
+    @if (weatherData.current.state === 'loading' || weatherData.today.state === 'loading') {
+      <ng-container *ngTemplateOutlet="loading" />
+    } @else if (weatherData.current.state === 'error' || weatherData.today.state === 'error') {
+      <div class="error-container">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>Unable to load weather data. Please try again later.</p>
+      </div>
+    } @else {
+      @let currentWeatherData = weatherData.current.data;
+      @let todaysWeatherData = weatherData.today.data;
+
+      <div class="charts-page">
+        <!-- Header -->
+        <div class="charts-header">
+          <div class="header-content">
+            <p-button
+              icon="pi pi-arrow-left"
+              routerLink="/"
+              [text]="true"
+              [plain]="true"
+              class="back-button"
+            />
+            <h1>Weather Charts</h1>
+          </div>
+          <div class="controls">
+            <p-selectbutton
+              [options]="tempOptions"
+              [(ngModel)]="tempFormat"
+              [allowEmpty]="false"
+              class="temp-toggle"
+            />
+          </div>
+        </div>
+
+        <!-- Time Range Tabs -->
+        <p-tabs [(value)]="activeTab" class="chart-tabs">
+          <p-tablist>
+            <p-tab value="current">Recent Data</p-tab>
+            <p-tab value="today">Today's Data</p-tab>
+          </p-tablist>
+
+          <p-tabpanels>
+            <!-- Current/Recent Data Tab -->
+            <p-tabpanel value="current">
+              <div class="charts-grid">
+                <!-- Temperature Chart -->
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <h3>Temperature</h3>
+                    <span class="current-value">{{ getCurrentTemp(currentWeatherData) }}</span>
+                  </div>
+                  <div class="chart-container">
+                    <app-temp-line
+                      [tempData]="gatherTemps(currentWeatherData)"
+                      [timestamps]="gatherTimestamps(currentWeatherData)"
+                      [tempFormat]="tempFormat"
+                    />
+                  </div>
+                </div>
+
+                <!-- Humidity Chart -->
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <h3>Humidity</h3>
+                    <span class="current-value">{{ getCurrentHumidity(currentWeatherData) }}</span>
+                  </div>
+                  <div class="chart-container">
+                    <app-humidity-line
+                      [humidity]="gatherHumidity(currentWeatherData)"
+                      [timestamps]="gatherTimestamps(currentWeatherData)"
+                    />
+                  </div>
+                </div>
+
+                <!-- Pressure Chart -->
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <h3>Pressure</h3>
+                    <span class="current-value">{{ getCurrentPressure(currentWeatherData) }}</span>
+                  </div>
+                  <div class="chart-container">
+                    <app-pressure-line
+                      [pressures]="gatherPressures(currentWeatherData)"
+                      [timestamps]="gatherTimestamps(currentWeatherData)"
+                    />
+                  </div>
+                </div>
+
+                <!-- Wind Speed Chart -->
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <h3>Wind Speed</h3>
+                    <span class="current-value">{{ getCurrentWindSpeed(currentWeatherData) }}</span>
+                  </div>
+                  <div class="chart-container">
+                    <app-wind-line
+                      [windSpeeds]="gatherWindSpeeds(currentWeatherData)"
+                      [timestamps]="gatherTimestamps(currentWeatherData)"
+                    />
+                  </div>
+                </div>
+
+                <!-- Wind Direction -->
+                <div class="chart-card compass-card">
+                  <div class="chart-header">
+                    <h3>Wind Direction</h3>
+                  </div>
+                  <div class="chart-container compass-container">
+                    <app-compass [direction]="getLatestWindDirection(currentWeatherData)" />
+                  </div>
+                </div>
+
+                <!-- Rainfall Chart -->
+                <div class="chart-card">
+                  <div class="chart-header">
+                    <h3>Rainfall</h3>
+                    <span class="current-value">{{ getRainTotal(currentWeatherData) }} in</span>
+                  </div>
+                  <div class="chart-container">
+                    <app-rainfall-line
+                      [rainfall]="gatherRainfall(currentWeatherData)"
+                      [timestamps]="gatherTimestamps(currentWeatherData)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </p-tabpanel>
+
+            <!-- Today's Data Tab -->
+            <p-tabpanel value="today">
+              @if (todaysWeatherData && todaysWeatherData.length > 0) {
+                <div class="charts-grid">
+                  <!-- Temperature Chart -->
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3>Temperature</h3>
+                      <div class="stat-range">
+                        <span class="high">H: {{ getPeakTemp(todaysWeatherData) }}</span>
+                        <span class="low">L: {{ getMinTemp(todaysWeatherData) }}</span>
+                      </div>
+                    </div>
+                    <div class="chart-container">
+                      <app-temp-line
+                        [tempData]="gatherTemps(todaysWeatherData)"
+                        [timestamps]="gatherTimestamps(todaysWeatherData)"
+                        [tempFormat]="tempFormat"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Humidity Chart -->
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3>Humidity</h3>
+                    </div>
+                    <div class="chart-container">
+                      <app-humidity-line
+                        [humidity]="gatherHumidity(todaysWeatherData)"
+                        [timestamps]="gatherTimestamps(todaysWeatherData)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Pressure Chart -->
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3>Pressure</h3>
+                    </div>
+                    <div class="chart-container">
+                      <app-pressure-line
+                        [pressures]="gatherPressures(todaysWeatherData)"
+                        [timestamps]="gatherTimestamps(todaysWeatherData)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Wind Speed Chart -->
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3>Wind Speed</h3>
+                    </div>
+                    <div class="chart-container">
+                      <app-wind-line
+                        [windSpeeds]="gatherWindSpeeds(todaysWeatherData)"
+                        [timestamps]="gatherTimestamps(todaysWeatherData)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Rainfall Chart -->
+                  <div class="chart-card full-width">
+                    <div class="chart-header">
+                      <h3>Rainfall</h3>
+                      <span class="current-value">Total: {{ getRainTotal(todaysWeatherData) }} in</span>
+                    </div>
+                    <div class="chart-container">
+                      <app-rainfall-line
+                        [rainfall]="gatherRainfall(todaysWeatherData)"
+                        [timestamps]="gatherTimestamps(todaysWeatherData)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="no-data">
+                  <i class="pi pi-info-circle"></i>
+                  <p>No data available for today yet.</p>
+                </div>
+              }
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
+      </div>
+    }
+  }
+}
+
+<ng-template #loading>
+  <div class="charts-page">
+    <div class="charts-header">
+      <div class="header-content">
+        <p-skeleton width="40px" height="40px" />
+        <p-skeleton width="200px" height="32px" />
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <p-skeleton height="300px" />
+      </div>
+      <div class="chart-card">
+        <p-skeleton height="300px" />
+      </div>
+      <div class="chart-card">
+        <p-skeleton height="300px" />
+      </div>
+      <div class="chart-card">
+        <p-skeleton height="300px" />
+      </div>
+    </div>
+  </div>
+</ng-template>

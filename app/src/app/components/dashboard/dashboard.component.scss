@@ -1,0 +1,316 @@
+.weather-app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--p-orange-500);
+  }
+}
+
+// Main Weather Card
+.main-weather-card {
+  background: linear-gradient(135deg, var(--p-primary-500), var(--p-primary-700));
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.temperature-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.current-temp {
+  font-size: 5rem;
+  font-weight: 200;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.feels-like {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: 1rem;
+}
+
+.temp-toggle {
+  display: flex;
+  justify-content: center;
+
+  ::ng-deep .p-selectbutton {
+    .p-button {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+
+      &.p-highlight {
+        background: rgba(255, 255, 255, 0.35);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+}
+
+.weather-summary {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.summary-text {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+// Today's Stats
+.today-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-item {
+  flex: 1;
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--p-text-muted-color);
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 600;
+
+  &.high {
+    color: var(--p-orange-500);
+  }
+
+  &.low {
+    color: var(--p-blue-500);
+  }
+}
+
+// Conditions Grid
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.condition-card {
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.condition-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--p-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 1.25rem;
+    color: var(--p-primary-600);
+  }
+}
+
+.condition-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.condition-label {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.condition-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Hourly Section
+.hourly-section {
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--p-text-color);
+}
+
+.hourly-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--p-surface-200);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--p-surface-400);
+    border-radius: 2px;
+  }
+}
+
+.hourly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  min-width: 70px;
+  background: var(--p-surface-100);
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+
+.hour-time {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  margin-bottom: 0.5rem;
+}
+
+.hour-temp {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin-bottom: 0.25rem;
+}
+
+.hour-humidity {
+  font-size: 0.7rem;
+  color: var(--p-blue-500);
+}
+
+// Quick Stats
+.quick-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.quick-stat {
+  flex: 1;
+  background: var(--p-surface-card);
+  border-radius: 1rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.quick-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+
+.quick-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+}
+
+// Charts Link
+.charts-link {
+  text-align: center;
+  padding: 1rem 0;
+
+  ::ng-deep .p-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  .weather-app {
+    padding: 0.75rem;
+  }
+
+  .main-weather-card {
+    padding: 1.5rem;
+  }
+
+  .current-temp {
+    font-size: 4rem;
+  }
+
+  .conditions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .condition-card {
+    padding: 0.875rem;
+  }
+}
