@@ -1,7 +1,4 @@
-@if (!isBrowser) {
-  <ng-container *ngTemplateOutlet="loading" />
-} @else {
-  @if (weatherData$ | async; as weatherData; ) {
+@if (weatherData$ | async; as weatherData) {
     @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
       <ng-container *ngTemplateOutlet="loading" />
     } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
@@ -14,7 +11,7 @@
       @let currentWeatherData = weatherData.current.data;
       @let todaysWeatherData = weatherData.today.data;
       <p-card header="Temp">
-        Current: {{ formattedTemp }}
+        Current: {{ formatTemp(latestWeatherData.temp) }}
         <br/>
         Feels
         Like: {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
@@ -65,7 +62,8 @@
       </p-card>
 
     }
-  }
+} @else {
+  <ng-container *ngTemplateOutlet="loading" />
 }
 
 <ng-template #loading>

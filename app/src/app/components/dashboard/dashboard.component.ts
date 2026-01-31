@@ -1,32 +1,19 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  Inject, OnInit,
-  PLATFORM_ID
-} from '@angular/core';
-import {WeatherDataService} from '../../services/weather-data.service';
-import {WeatherData} from '../../models/weather-data.interface';
-import {AsyncPipe, DatePipe, isPlatformBrowser, NgTemplateOutlet} from '@angular/common';
-import {
-  catchError,
-  forkJoin,
-  Observable,
-  of, shareReplay,
-  switchMap,
-  tap,
-  timer
-} from 'rxjs';
-import {ButtonModule} from 'primeng/button';
-import {CardModule} from 'primeng/card';
-import {windSpeedChartConfig} from './chart-configs/wind-speed-chart.config';
-import {TempLineComponent} from './temp-line/temp-line.component';
-import {WindLineComponent} from './wind-line/wind-line.component';
-import {HumidityLineComponent} from './humidity-line/humidity-line.component';
-import {CompassComponent} from './compass/compass.component';
-import {RainfallLineComponent} from './rainfall-line/rainfall-line.component';
-import {PressureLineComponent} from './pressure-line/pressure-line.component';
-import {SkeletonModule} from 'primeng/skeleton';
-import {ApiResponse} from '../../models/api.interface';
+import { Component, OnInit } from '@angular/core';
+import { CombinedWeatherData, WeatherDataService } from '../../services/weather-data.service';
+import { WeatherUtilsService } from '../../services/weather-utils.service';
+import { WeatherData } from '../../models/weather-data.interface';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
+import { Observable } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { windSpeedChartConfig } from './chart-configs/wind-speed-chart.config';
+import { TempLineComponent } from './temp-line/temp-line.component';
+import { WindLineComponent } from './wind-line/wind-line.component';
+import { HumidityLineComponent } from './humidity-line/humidity-line.component';
+import { CompassComponent } from './compass/compass.component';
+import { RainfallLineComponent } from './rainfall-line/rainfall-line.component';
+import { PressureLineComponent } from './pressure-line/pressure-line.component';
+import { SkeletonModule } from 'primeng/skeleton';
 
 // Run with  ng serve --host 127.0.0.1
 
@@ -49,151 +36,65 @@ import {ApiResponse} from '../../models/api.interface';
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
-  isLoading = true;
-  hasError = false;
-  weatherData$: Observable<{current: ApiResponse<WeatherData[]>, today: ApiResponse<WeatherData[]>, summary: ApiResponse<{ summary: string }>}>;
-  tempFormat: "f" | "c" = "f";
-  formattedTemp: string;
-  isBrowser: boolean;
+  weatherData$: Observable<CombinedWeatherData>;
+  tempFormat: 'f' | 'c' = 'f';
 
   constructor(
     private weatherDataService: WeatherDataService,
-    private cdRef: ChangeDetectorRef,
-    private datePipe: DatePipe,
-    @Inject(PLATFORM_ID) private platformId: Object
+    private weatherUtils: WeatherUtilsService
   ) {}
 
   ngOnInit() {
-    this.isBrowser = isPlatformBrowser(this.platformId);
-    if (this.isBrowser) {
-        this.weatherData$ = timer(0, 60000).pipe(
-          switchMap(() => {
-            return forkJoin({
-              current: this.weatherDataService.getCurrentWeatherData("80bb40b5fce97afec61866080fa08e01"),
-              today: this.weatherDataService.getTodaysWeatherData("80bb40b5fce97afec61866080fa08e01"),
-              summary: this.weatherDataService.getAISummary("80bb40b5fce97afec61866080fa08e01")
-            })
-          }),
-          tap(({current, today, summary}) => {
-            if (current.state === 'success' && current.data) {
-              if (current.data[current.data.length - 1]?.temp) {
-                this.formattedTemp = this.formatTemp(current.data[current.data.length - 1].temp);
-              }
-              this.hasError = false;
-              this.isLoading = true;
-            }
-
-            if (today.state === 'success' && !today.data) {
-              today.data = [];
-            }
-
-            return {current, today, summary};
-          }),
-          shareReplay({ bufferSize: 1, refCount: true })
-        );
-        // Detect changes after initial assignment - as we are using onPush
-        this.cdRef.markForCheck();
-    }
+    this.weatherData$ = this.weatherDataService.getCombinedWeatherData('80bb40b5fce97afec61866080fa08e01');
   }
 
   formatTemp(temp: number): string {
-    if (this.tempFormat === 'f') {
-      return this.formatToF(temp);
-    } else {
-      return this.formatToC(temp);
-    }
+    return this.weatherUtils.formatTemp(temp, this.tempFormat);
   }
 
   getPeakTemp(weatherData: WeatherData[]): string {
-    const peak = Math.max(...weatherData.map(data => data.temp));
-    if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
-      return 'Peak Temp not available';
-    }
-    return this.formatTemp(peak);
+    return this.weatherUtils.getPeakTemp(weatherData, this.tempFormat);
   }
 
   getPeakHumidity(weatherData: WeatherData[]): string {
-    const peak = Math.max(...weatherData.map(data => data.hum));
-    if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
-      return 'Peak Humidity not available';
-    }
-    return peak + '%';
+    return this.weatherUtils.getPeakHumidity(weatherData);
   }
 
-  calculateFeelsLikeTemp(tempC: number, humidity: number, windMph: number) {
-    const windKph = windMph * 1.609;
-    const tempF = (tempC * 9) / 5 + 32;
-
-    if (tempC >= 27 && humidity >= 40) {
-      const HI = -42.379 +
-        2.04901523 * tempF +
-        10.14333127 * humidity -
-        0.22475541 * tempF * humidity -
-        0.00683783 * tempF ** 2 -
-        0.05481717 * humidity ** 2 +
-        0.00122874 * tempF ** 2 * humidity +
-        0.00085282 * tempF * humidity ** 2 -
-        0.00000199 * tempF ** 2 * humidity ** 2;
-
-      const feelsLikeC = (HI - 32) * 5 / 9;
-      return Math.round(feelsLikeC * 10) / 10;
-    }
-
-    if (tempC <= 10 && windKph > 4.8) {
-      const V = windKph;
-      const T_wc = 13.12 +
-        0.6215 * tempC -
-        11.37 * Math.pow(V, 0.16) +
-        0.3965 * tempC * Math.pow(V, 0.16);
-      return Math.round(T_wc * 10) / 10;
-    }
-
-    return Math.round(tempC * 10) / 10;
+  calculateFeelsLikeTemp(tempC: number, humidity: number, windMph: number): number {
+    return this.weatherUtils.calculateFeelsLikeTemp(tempC, humidity, windMph);
   }
 
   gatherTimestamps(weatherData: WeatherData[]): string[] {
-    return weatherData.map(data => {
-      const date = new Date(data.timestamp * 1000);
-      return this.datePipe.transform(date, 'h:mm a') ?? '';
-    })
+    return this.weatherUtils.gatherTimestamps(weatherData);
   }
 
   gatherWindSpeeds(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.windSpeed);
+    return this.weatherUtils.gatherWindSpeeds(weatherData);
   }
 
   gatherTemps(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.temp);
+    return this.weatherUtils.gatherTemps(weatherData);
   }
 
   gatherRainfall(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => Math.round((data.rainfall / 25.4) * 100) / 100);
+    return this.weatherUtils.gatherRainfall(weatherData);
   }
 
   gatherPressures(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => this.convertPressureToInches(data.pr));
+    return this.weatherUtils.gatherPressures(weatherData);
   }
 
   gatherHumidity(weatherData: WeatherData[]): number[] {
-    return weatherData.map(data => data.hum);
+    return this.weatherUtils.gatherHumidity(weatherData);
   }
 
   convertPressureToInches(pressure: number): number {
-    return +(pressure * 0.02953).toFixed(2)
+    return this.weatherUtils.convertPressureToInches(pressure);
   }
 
   getRainTotal(weatherData: WeatherData[]): number {
-    return Math.round(weatherData.reduce((accumulator, currentValue) => accumulator + (currentValue.rainfall / 25.4), 0) * 100) / 100;
-  }
-
-  formatToF(temp: number): string {
-    return (temp * (9/5) + 32).toFixed(2) + ' °F';
-  }
-
-  formatToC(temp: number): string {
-    return temp.toFixed(2) + ' °C';
+    return this.weatherUtils.getRainTotal(weatherData);
   }
 
   protected readonly windSpeedChartConfig = windSpeedChartConfig;
-
 }
