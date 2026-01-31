@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.0](https://github.com/ajcuddeback/nimbus/compare/v1.3.2...v1.4.0) (2026-01-31)
+
+
+### Features
+
+* Adding Crash Recovery for cache ([a672074](https://github.com/ajcuddeback/nimbus/commit/a672074df3ba81eb766cad12226065bac5ae451d))
+* Adding home page and removing SSR ([c2c400c](https://github.com/ajcuddeback/nimbus/commit/c2c400c172f018a4caedfde633ff3f877469b04b))
+* Adding home page and removing SSR ([c887e77](https://github.com/ajcuddeback/nimbus/commit/c887e77b6b606bbb147763c56d9d668566b8a1d4))
+* persist weather cache to disk for crash recovery ([bf9fb11](https://github.com/ajcuddeback/nimbus/commit/bf9fb1145caa4781f8b03aa3b0acd39961f7a815))
+
 ## [1.3.2](https://github.com/ajcuddeback/nimbus/compare/v1.3.1...v1.3.2) (2025-11-01)
 
 
