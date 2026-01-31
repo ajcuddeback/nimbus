@@ -1,34 +1,134 @@
-<!-- Background Image based on current weather -->
-<section class="">
-  <div>
-    <i></i>
-    <p></p>
+@if (weatherData$ | async; as weatherData) {
+    @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
+      <ng-container *ngTemplateOutlet="loading" />
+    } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
+      <p-card>
+        <div class="error-state">
+          <i class="pi pi-cloud-upload"></i>
+          <p>Unable to load weather data</p>
+          <p class="error-hint">Please check your connection and try again</p>
+        </div>
+      </p-card>
+    } @else {
+      @let latestWeatherData = weatherData.current.data[weatherData.current.data.length - 1];
+      @let todaysWeatherData = weatherData.today.data;
+
+      <div class="landing-container">
+        <!-- Hero Section: Current Temperature -->
+        <p-card>
+          <div class="hero">
+            <div class="temp-display">
+              <span class="temp-value">{{ formatTempShort(latestWeatherData.temp) }}</span>
+              <p-button
+                [label]="tempFormat === 'f' ? '°F' : '°C'"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                (click)="toggleTempFormat()"
+              />
+            </div>
+            <p class="feels-like">
+              Feels like {{ formatTempShort(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
+            </p>
+            <div class="today-range">
+              <span class="high">H: {{ getPeakTemp(todaysWeatherData) }}</span>
+              <span class="low">L: {{ getMinTemp(todaysWeatherData) }}</span>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- AI Summary -->
+        <p-card>
+          <ng-template #header>
+            <div class="card-header">
+              <i class="pi pi-sparkles"></i>
+              <span>AI Summary</span>
+            </div>
+          </ng-template>
+          <p>{{ weatherData.summary.data.summary }}</p>
+        </p-card>
+
+        <!-- Current Conditions Grid -->
+        <div class="conditions-grid">
+          <p-card>
+            <div class="condition-content">
+              <i class="pi pi-sun condition-icon"></i>
+              <span class="condition-label">Humidity</span>
+              <span class="condition-value">{{ latestWeatherData.hum }}%</span>
+            </div>
+          </p-card>
+
+          <p-card>
+            <div class="condition-content">
+              <i class="pi pi-gauge condition-icon"></i>
+              <span class="condition-label">Pressure</span>
+              <span class="condition-value">{{ convertPressureToInches(latestWeatherData.pr) }} in</span>
+            </div>
+          </p-card>
+
+          <p-card>
+            <div class="condition-content">
+              <i class="pi pi-compass condition-icon"></i>
+              <span class="condition-label">Wind</span>
+              <span class="condition-value">{{ latestWeatherData.windSpeed }} mph {{ getWindDirectionLabel(latestWeatherData.windDirection) }}</span>
+            </div>
+          </p-card>
+
+          <p-card>
+            <div class="condition-content">
+              <i class="pi pi-cloud condition-icon"></i>
+              <span class="condition-label">Rain Today</span>
+              <span class="condition-value">{{ getRainTotal(todaysWeatherData) }} in</span>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Station Info -->
+        <p-card>
+          <div class="station-info">
+            <i class="pi pi-microchip"></i>
+            <span>Data collected from a personal Raspberry Pi weather station</span>
+          </div>
+        </p-card>
+
+        <!-- Link to Dashboard -->
+        <div class="dashboard-link">
+          <p-button
+            label="View Detailed Data"
+            icon="pi pi-chart-line"
+            routerLink="/dashboard"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </div>
+    }
+} @else {
+  <ng-container *ngTemplateOutlet="loading" />
+}
+
+<ng-template #loading>
+  <div class="landing-container">
+    <p-card>
+      <div class="hero">
+        <p-skeleton width="180px" height="96px" />
+        <p-skeleton width="120px" height="24px" styleClass="mt-2" />
+        <div class="today-range">
+          <p-skeleton width="60px" height="20px" />
+          <p-skeleton width="60px" height="20px" />
+        </div>
+      </div>
+    </p-card>
+
+    <p-card>
+      <p-skeleton width="100%" height="60px" />
+    </p-card>
+
+    <div class="conditions-grid">
+      <p-card><p-skeleton width="100%" height="72px" /></p-card>
+      <p-card><p-skeleton width="100%" height="72px" /></p-card>
+      <p-card><p-skeleton width="100%" height="72px" /></p-card>
+      <p-card><p-skeleton width="100%" height="72px" /></p-card>
+    </div>
   </div>
-  <p></p>
-  <p></p>
-  <div class="info">
-
-  </div>
-</section>
-
-<!-- AI Generated message -->
-<section class="ai-summary">
-  <i></i>
-  <p></p>
-</section>
-
-<!-- Call to Open Weather API for future data -->
-<section class="grid">
-
-</section>
-
-<section class="grid">
-  <!-- Simple charts here for current weather data - not line charts -->
-  <!-- Icon for weather -->
-  <!-- Temp -->
-  <!-- Feels Like -->
-  <!-- Humidity -->
-  <!-- Info explaining that this is generated via Raspberry Pi Station -->
-</section>
-
-<!-- Link to social on footer -->
+</ng-template>
