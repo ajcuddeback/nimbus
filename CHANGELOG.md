@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/ajcuddeback/nimbus/compare/v1.4.0...v1.4.1) (2026-01-31)
+
+
+### Bug Fixes
+
+* Merge pull request [#30](https://github.com/ajcuddeback/nimbus/issues/30) from ajcuddeback/revert-16-dependabot/npm_and_yarn/app/angular/common-20.3.14 ([18f7176](https://github.com/ajcuddeback/nimbus/commit/18f71760c898c4221ed713a4776250f3b8fa429a))
+
 ## [1.4.0](https://github.com/ajcuddeback/nimbus/compare/v1.3.2...v1.4.0) (2026-01-31)
 
 
