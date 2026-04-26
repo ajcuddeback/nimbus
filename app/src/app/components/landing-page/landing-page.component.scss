@@ -1,3 +1,29 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  transition: background 0.6s ease-in-out;
+}
+
+:host(.weather-bg-sunny) {
+  background: linear-gradient(180deg, #ffd97a 0%, #ffa64d 100%);
+}
+
+:host(.weather-bg-cloudy) {
+  background: linear-gradient(180deg, #b8c6d1 0%, #6e7e8e 100%);
+}
+
+:host(.weather-bg-rainy) {
+  background: linear-gradient(180deg, #5a7a93 0%, #2c3e50 100%);
+}
+
+:host(.weather-bg-stormy) {
+  background: linear-gradient(180deg, #2c3e50 0%, #1a1a2e 100%);
+}
+
+:host(.weather-bg-snowy) {
+  background: linear-gradient(180deg, #e8f1f5 0%, #b3c9d6 100%);
+}
+
 .landing-container {
   max-width: 600px;
   margin: 0 auto;

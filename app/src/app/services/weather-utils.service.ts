@@ -106,6 +106,14 @@ export class WeatherUtilsService {
     return directions[index];
   }
 
+  getWeatherCondition(data: WeatherData): 'snowy' | 'stormy' | 'rainy' | 'cloudy' | 'sunny' {
+    if (data.rainfall > 0 && data.temp <= 0) return 'snowy';
+    if (data.rainfall > 0 && data.windSpeed >= 20) return 'stormy';
+    if (data.rainfall > 0) return 'rainy';
+    if (data.hum >= 75) return 'cloudy';
+    return 'sunny';
+  }
+
   getRainTotal(weatherData: WeatherData[]): number {
     if (!weatherData || weatherData.length === 0) return 0;
     return Math.round(weatherData.reduce((acc, curr) => acc + (curr.rainfall / 25.4), 0) * 100) / 100;

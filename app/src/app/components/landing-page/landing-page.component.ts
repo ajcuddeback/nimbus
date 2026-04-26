@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -22,9 +22,12 @@ import { WeatherData } from '../../models/weather-data.interface';
   templateUrl: './landing-page.component.html',
   styleUrl: './landing-page.component.scss'
 })
-export class LandingPageComponent implements OnInit {
+export class LandingPageComponent implements OnInit, OnDestroy {
   weatherData$: Observable<CombinedWeatherData>;
   tempFormat: 'f' | 'c' = 'f';
+
+  @HostBinding('class') conditionClass = 'weather-bg-sunny';
+  private subscription?: Subscription;
 
   constructor(
     private weatherDataService: WeatherDataService,
@@ -33,6 +36,16 @@ export class LandingPageComponent implements OnInit {
 
   ngOnInit() {
     this.weatherData$ = this.weatherDataService.getCombinedWeatherData('80bb40b5fce97afec61866080fa08e01');
+    this.subscription = this.weatherData$.subscribe(data => {
+      if (data.current.state === 'success' && data.current.data.length > 0) {
+        const latest = data.current.data[data.current.data.length - 1];
+        this.conditionClass = `weather-bg-${this.weatherUtils.getWeatherCondition(latest)}`;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription?.unsubscribe();
   }
 
   formatTemp(temp: number): string {
