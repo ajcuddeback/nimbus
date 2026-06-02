@@ -80,6 +80,8 @@ public final class MqttService {
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);
+        connectionOptions.setKeepAliveInterval(30);
+        connectionOptions.setSessionExpiryInterval(86400L);
 
         Flux.defer(() -> {
                     log.info("Starting MQTT connection and subscription flow");
@@ -150,6 +152,17 @@ public final class MqttService {
                 sink.error(e);
             }
         });
+    }
+
+    public void resubscribe() throws MqttException {
+        log.info("Re-subscribing to {} topics", topics.size());
+        Flux.fromIterable(topics)
+                .flatMap(topic -> subscribeAsync(topic)
+                        .doOnSuccess(v -> log.info("Re-subscribed to topic: {}", topic))
+                        .doOnError(e -> log.error("Failed to re-subscribe to {}: {}", topic, e.getMessage()))
+                        .onErrorResume(e -> Mono.empty())
+                )
+                .subscribe();
     }
 
     public void publishEvent(final String topic, final byte[] message) throws MqttException {

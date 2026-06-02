@@ -135,7 +135,15 @@ public class WeatherDataCallback implements MqttCallback {
 
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
-        log.info("Connection complete");
+        log.info("Connection complete. Reconnect: {}", reconnect);
+        if (reconnect) {
+            log.info("Reconnected to MQTT broker, re-subscribing to topics...");
+            try {
+                mqttService.resubscribe();
+            } catch (MqttException e) {
+                log.error("Failed to re-subscribe after reconnect", e);
+            }
+        }
     }
 
     @Override
