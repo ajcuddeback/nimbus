@@ -67,6 +67,8 @@ public final class WeatherDataService {
         final long firstHourOfDayUtcEpoch = firstHourOfDay.toEpochSecond();
         final long lastHourOfDayUtcEpoch = lastHourOfDay.toEpochSecond();
 
+        log.info("getTodaysWeather query - stationId: {}, timezone: {}, epochRange: [{} - {}], dateRange: [{} - {}]",
+                stationId, timezone, firstHourOfDayUtcEpoch, lastHourOfDayUtcEpoch, firstHourOfDay, lastHourOfDay);
 
         return mongoTemplate
                 .query(WeatherData.class)
@@ -79,6 +81,31 @@ public final class WeatherDataService {
                                         .lte(lastHourOfDayUtcEpoch)
                         )
                                 .with(Sort.by("timestamp").ascending())
-                ).all();
+                )
+                .all()
+                .doOnNext(data -> log.debug("Found weather data: timestamp={}, stationId={}", data.getTimestamp(), data.getStationId()))
+                .doOnComplete(() -> log.info("getTodaysWeather query completed for stationId: {}", stationId))
+                .doOnError(error -> log.error("getTodaysWeather query failed for stationId: {}", stationId, error))
+                .switchIfEmpty(Flux.defer(() -> {
+                    log.warn("No weather data found for stationId: {} in epoch range [{} - {}]", stationId, firstHourOfDayUtcEpoch, lastHourOfDayUtcEpoch);
+                    // Log the latest entry for this station to help diagnose timestamp issues
+                    return getLatestWeatherData(stationId)
+                            .doOnNext(latest -> log.warn("Latest record for stationId {} has timestamp: {} ({})",
+                                    stationId, latest.getTimestamp(),
+                                    java.time.Instant.ofEpochSecond(latest.getTimestamp()).atZone(ZoneId.of(timezone))))
+                            .then(Mono.empty());
+                }));
+    }
+
+    public Mono<WeatherData> getLatestWeatherData(final String stationId) {
+        return mongoTemplate
+                .query(WeatherData.class)
+                .matching(
+                        query(where("stationId").is(stationId))
+                                .with(Sort.by("timestamp").descending())
+                                .limit(1)
+                )
+                .first()
+                .doOnNext(data -> log.debug("Latest weather data for stationId {}: timestamp={}", stationId, data.getTimestamp()));
     }
 } 
