@@ -134,7 +134,6 @@ WEATHER_API_KEY=...
 9. Set permissions:
    ```bash
    sudo chmod 755 /home/ubuntu
-   sudo chown -R www-data:www-data /home/ubuntu/nimbus/app/dist/app/browser/index.html
    ```
 
 10. Enable and configure nginx:
