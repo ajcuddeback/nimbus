@@ -102,11 +102,13 @@ WEATHER_API_KEY=...
    newgrp docker
    ```
 
-3. Clone the repo and start the app:
+3. Clone the repo, build, and deploy static files:
    ```bash
    git clone https://github.com/ajcuddeback/nimbus.git
    cd nimbus
    docker compose up -d --build
+   sudo mkdir -p /var/www/nimbus
+   docker compose cp frontend:/usr/src/app/dist/app/browser/. /var/www/nimbus/
    ```
 
 4. Install nginx:
@@ -155,6 +157,8 @@ WEATHER_API_KEY=...
 ```bash
 git pull
 docker compose up -d --build
+docker compose cp frontend:/usr/src/app/dist/app/browser/. /var/www/nimbus/
+sudo systemctl reload nginx
 ```
 
 ---
