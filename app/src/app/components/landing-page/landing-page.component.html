@@ -9,6 +9,14 @@
           <p class="error-hint">Please check your connection and try again</p>
         </div>
       </p-card>
+    } @else if (weatherData.current.data.length === 0) {
+      <p-card>
+        <div class="error-state">
+          <i class="pi pi-clock"></i>
+          <p>Waiting for weather station data</p>
+          <p class="error-hint">No readings have been received yet</p>
+        </div>
+      </p-card>
     } @else {
       @let latestWeatherData = weatherData.current.data[weatherData.current.data.length - 1];
       @let todaysWeatherData = weatherData.today.data;

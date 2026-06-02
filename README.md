@@ -84,7 +84,14 @@ WEATHER_API_KEY=...
 
 ### Steps
 
-1. Install Docker:
+1. Copy the EMQX SSL certificate to the server:
+   ```bash
+   sudo mkdir -p /etc/nimbus
+   scp /path/to/emqxsl-ca.crt ubuntu@your-server-ip:/etc/nimbus/emqxsl-ca.crt
+   ```
+   Make sure `MQTT_SSL_CERT_LOCATION` in `/etc/nimbus.env` points to `/etc/nimbus/emqxsl-ca.crt`.
+
+2. Install Docker:
    ```bash
    sudo apt update
    sudo apt install -y ca-certificates curl gnupg

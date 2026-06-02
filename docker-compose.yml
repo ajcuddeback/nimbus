@@ -11,6 +11,8 @@ services:
       - /etc/nimbus.env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+    volumes:
+      - /etc/nimbus:/etc/nimbus:ro
     restart: unless-stopped
 
   frontend:
