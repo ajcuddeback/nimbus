@@ -4,5 +4,4 @@ out
 /.idea
 .git
 gradle-wrapper.jar
-gradlew
 Dockerfile
