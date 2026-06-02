@@ -23,7 +23,7 @@ ENV NODE_ENV=production
 COPY --from=build /usr/src/app/dist /usr/src/app/dist
 COPY --from=build /usr/src/app/package.json /usr/src/app/package.json
 
-EXPOSE 4000
+EXPOSE 4001
 
 # adjust this if your build outputs somewhere else
 CMD ["node", "dist/app/server/server.mjs"]
