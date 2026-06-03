@@ -19,7 +19,7 @@ Nimbus collects minute-by-minute atmospheric data from a custom-built weather st
 | IoT Sensor   | Raspberry Pi, Python, BME280            |
 | Messaging    | MQTT (Mosquitto broker)                 |
 | Backend      | Java, Spring WebFlux, Reactor, MongoDB  |
-| Frontend     | Angular (SSR with hydration), ngx-charts |
+| Frontend     | Angular, custom SVG charts               |
 | Deployment   | Ubuntu VM, Docker, NGINX, Certbot       |
 
 ---
@@ -36,7 +36,7 @@ Nimbus collects minute-by-minute atmospheric data from a custom-built weather st
 - **Reactive backend** using Spring WebFlux and Reactor
 - **Minute-by-minute ingestion** into MongoDB
 - **Historical charting** by metric and time
-- **SSR-enabled Angular UI** for SEO & fast load
+- **Angular UI** with custom SVG charts and live dark/light mode
 - **Self-hosted on a virtual machine** using NGINX
 
 ---
@@ -109,50 +109,57 @@ WEATHER_API_KEY=...
    newgrp docker
    ```
 
-3. Clone the repo, build, and deploy static files:
+3. Clone the repo and start the backend:
    ```bash
    git clone https://github.com/ajcuddeback/nimbus.git
    cd nimbus
    docker compose up -d --build
-   sudo mkdir -p /var/www/nimbus
-   docker compose cp frontend:/usr/src/app/dist/app/browser/. /var/www/nimbus/
    ```
 
-4. Install nginx:
+4. Create the web root and deploy the frontend:
+   ```bash
+   sudo mkdir -p /var/www/nimbus
+   chmod +x deploy-frontend.sh
+   ./deploy-frontend.sh
+   ```
+
+   `deploy-frontend.sh` uses Docker BuildKit to build the Angular app, then `rsync`s the output to `/var/www/nimbus`, removing any stale files from previous builds. Run it every time you redeploy the frontend.
+
+5. Install nginx:
    ```bash
    sudo apt install nginx
    ```
 
-5. Copy the nginx config:
+6. Copy the nginx config:
    ```bash
    sudo cp nginx/nginx.conf /etc/nginx/sites-available/nimbus
    ```
 
-6. Install certbot:
+7. Install certbot:
    ```bash
    sudo apt install certbot python3-certbot-nginx
    ```
 
-7. Buy a domain and add DNS A records pointing to your VPS IP — you'll need both `@` and `www` records.
+8. Buy a domain and add DNS A records pointing to your VPS IP — you'll need both `@` and `www` records.
 
-8. Issue the SSL certificate (certbot will auto-update the nginx config):
+9. Issue the SSL certificate (certbot will auto-update the nginx config):
    ```bash
    sudo certbot --nginx -d nimbus-weather-project.com -d www.nimbus-weather-project.com
    ```
 
-9. Set permissions:
+10. Set permissions:
    ```bash
    sudo chmod 755 /home/ubuntu
    ```
 
-10. Enable and configure nginx:
+11. Enable and configure nginx:
     ```bash
     sudo systemctl enable nginx
     sudo ln -s /etc/nginx/sites-available/nimbus /etc/nginx/sites-enabled/
     sudo rm /etc/nginx/sites-enabled/default
     ```
 
-11. Test and reload:
+12. Test and reload:
     ```bash
     sudo nginx -t
     sudo systemctl reload nginx
@@ -161,11 +168,23 @@ WEATHER_API_KEY=...
 
 ### Redeploying
 
+**Backend only:**
 ```bash
 git pull
-docker compose up -d --build
-docker compose cp frontend:/usr/src/app/dist/app/browser/. /var/www/nimbus/
-sudo systemctl reload nginx
+docker compose up -d --build backend
+```
+
+**Frontend only:**
+```bash
+git pull
+./deploy-frontend.sh
+```
+
+**Both:**
+```bash
+git pull
+docker compose up -d --build backend
+./deploy-frontend.sh
 ```
 
 ---
@@ -178,20 +197,17 @@ sudo systemctl reload nginx
 # View running containers
 docker compose ps
 
-# View logs for a service (backend or frontend)
+# View backend logs
 docker compose logs -f backend
-docker compose logs -f frontend
 
-# Restart a single service
+# Restart backend
 docker compose restart backend
-docker compose restart frontend
 
 # Stop all services
 docker compose down
 
-# Rebuild and restart a single service
+# Rebuild and restart backend
 docker compose up -d --build backend
-docker compose up -d --build frontend
 ```
 
 ### nginx

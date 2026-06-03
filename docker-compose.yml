@@ -15,11 +15,5 @@ services:
       - /etc/nimbus:/etc/nimbus:ro
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    image: nimbus-frontend:latest
-    env_file:
-      - /etc/nimbus.env
-    restart: unless-stopped
+  # Frontend is deployed via deploy-frontend.sh, not docker-compose.
+  # See that script for the build + rsync process.
