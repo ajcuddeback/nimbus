@@ -1,119 +1,217 @@
 @if (weatherData$ | async; as weatherData) {
-    @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
-      <ng-container *ngTemplateOutlet="loading" />
-    } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
-      <p>Failed</p>
-    } @else {
-      <p-card header="AI Summary">
-        <p>{{ weatherData.summary.data.summary }}</p>
-      </p-card>
-      @let latestWeatherData = weatherData.current.data[weatherData.current.data.length - 1];
-      @let currentWeatherData = weatherData.current.data;
-      @let todaysWeatherData = weatherData.today.data;
-      <p-card header="Temp">
-        Current: {{ formatTemp(latestWeatherData.temp) }}
-        <br/>
-        Feels
-        Like: {{ formatTemp(calculateFeelsLikeTemp(latestWeatherData.temp, latestWeatherData.hum, latestWeatherData.windSpeed)) }}
-        <app-temp-line [tempData]="gatherTemps(currentWeatherData)" [timestamps]="gatherTimestamps(currentWeatherData)"
-                       [tempFormat]="tempFormat"/>
-      </p-card>
-      <p-card header="Today's Temp Variablility">
-        Today's Peak Temp: {{ getPeakTemp(todaysWeatherData) }}
-        <app-temp-line [tempData]="gatherTemps(todaysWeatherData)" [timestamps]="gatherTimestamps(todaysWeatherData)"
-                       [tempFormat]="tempFormat"/>
-      </p-card>
-      <p-card header="Humidity">
-        Current: {{ latestWeatherData.hum }}%
-        <app-humidity-line [humidity]="gatherHumidity(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Humidity Variablility">
-        Today's Peak Humidity: {{ getPeakHumidity(todaysWeatherData) }}
-        <app-humidity-line [humidity]="gatherHumidity(todaysWeatherData)"
-                           [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
-      <p-card header="Pressure">
-        Current: {{ convertPressureToInches(latestWeatherData.pr) }} in
-        <app-pressure-line [pressures]="gatherPressures(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Wind Speed">
-        Current: {{ latestWeatherData.windSpeed }} mph
-        <app-wind-line [windSpeeds]="gatherWindSpeeds(currentWeatherData)"
-                       [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Wind Speed Variablility">
-        <app-wind-line [windSpeeds]="gatherWindSpeeds(todaysWeatherData)"
-                       [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
-      <p-card header="Wind Direction">
-        <app-compass [direction]="latestWeatherData.windDirection"/>
-      </p-card>
-      <p-card header="Rainfall Total">
-        Current Total: {{ getRainTotal(currentWeatherData) }}in.
-        <app-rainfall-line [rainfall]="gatherRainfall(currentWeatherData)"
-                           [timestamps]="gatherTimestamps(currentWeatherData)"/>
-      </p-card>
-      <p-card header="Today's Rainfall Total">
-        Today's Total: {{ getRainTotal(todaysWeatherData) }}in.
-        <app-rainfall-line [rainfall]="gatherRainfall(todaysWeatherData)"
-                           [timestamps]="gatherTimestamps(todaysWeatherData)"/>
-      </p-card>
+  @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
+    <ng-container *ngTemplateOutlet="loading" />
+  } @else if (weatherData.current.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
+    <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
+      <div class="n-card" style="padding:36px;text-align:center">
+        <div class="n-eyebrow" style="color:var(--c-temp)">Connection error</div>
+        <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px">Unable to load weather data.</p>
+      </div>
+    </div>
+  } @else {
+    @let latest = weatherData.current.data[weatherData.current.data.length - 1];
+    @let currentData = weatherData.current.data;
+    @let todayData = weatherData.today.data;
+    @let chartData = liveMode ? currentData : todayData;
+    @let xEveryVal = liveMode ? 6 : 4;
 
-    }
+    <div class="db-screen n-detail">
+
+      <!-- Header -->
+      <div class="db-header">
+        <div class="db-header__left">
+          <button class="n-btn n-btn--ghost db-back" routerLink="/">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <path d="M13 8H4M8 4L4 8l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Home
+          </button>
+          <div>
+            <div class="db-title">Detailed Data</div>
+            <div class="db-subtitle">NIMBUS-01 · Backyard · Austin, TX</div>
+          </div>
+        </div>
+        <div class="db-header__right">
+          <span class="n-pill"><span class="n-live-dot"></span>&nbsp;updated {{ getLastUpdateTime(latest) }}</span>
+          <div class="n-toggle">
+            <button [attr.data-active]="liveMode" (click)="setLiveMode(true)">LIVE · MIN</button>
+            <button [attr.data-active]="!liveMode" (click)="setLiveMode(false)">TODAY · HR</button>
+          </div>
+          <button class="db-theme-btn" (click)="toggleTheme()" [title]="isDark ? 'Light mode' : 'Dark mode'">
+            @if (isDark) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              </svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Summary strip -->
+      <div class="db-summary">
+        <span class="n-eyebrow db-summary__label">
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6z" fill="currentColor"/>
+          </svg>
+          AI Summary
+        </span>
+        <p class="db-summary__text">{{ weatherData.summary.state === 'success' ? weatherData.summary.data.summary : '' }}</p>
+      </div>
+
+      <div class="db-body">
+
+        <!-- Temperature Hero -->
+        <div class="n-card">
+          <div class="n-detail__hero">
+            <div class="n-detail__heroside">
+              <div class="n-eyebrow" style="color:var(--c-temp)">Temperature</div>
+              <div class="db-hero-temp">
+                <span class="db-hero-temp__val">{{ (latest.temp * 9/5 + 32).toFixed(1) }}</span>
+                <span class="db-hero-temp__unit">°F</span>
+              </div>
+              <div class="db-readouts">
+                <div class="db-readout">
+                  <span class="db-readout__k">Feels like</span>
+                  <span class="db-readout__v">{{ getFeelsLike(latest.temp, latest.hum, latest.windSpeed) }} °F</span>
+                </div>
+                <div class="db-readout">
+                  <span class="db-readout__k">Today high</span>
+                  <span class="db-readout__v" style="color:var(--c-temp)">{{ getPeakTemp(todayData) }} °F</span>
+                </div>
+                <div class="db-readout">
+                  <span class="db-readout__k">Today low</span>
+                  <span class="db-readout__v">{{ getLowTemp(todayData) }} °F</span>
+                </div>
+              </div>
+            </div>
+            <div class="n-detail__herochart">
+              <div class="db-chart-meta">
+                <span>{{ liveMode ? 'last readings · minute' : 'midnight → now · hourly' }}</span>
+                <span>peak {{ getPeakTemp(todayData) }}°F</span>
+              </div>
+              <app-area-chart
+                [values]="getTempValues(chartData)"
+                [labels]="getLabels(chartData)"
+                color="var(--c-temp)" unit="°" [height]="236"
+                [decimals]="1" [xEvery]="xEveryVal" [yTicks]="5"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric grid -->
+        <div class="n-detail__grid">
+          <div class="n-card db-metric">
+            <div class="db-metric__head">
+              <div>
+                <div class="n-eyebrow" style="color:var(--c-humid)">Humidity</div>
+                <div class="db-metric__val">{{ latest.hum.toFixed(1) }}%</div>
+              </div>
+              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
+            </div>
+            <app-area-chart
+              [values]="getHumidValues(chartData)"
+              [labels]="getLabels(chartData)"
+              color="var(--c-humid)" unit="%" [height]="150"
+              [decimals]="0" [xEvery]="xEveryVal" [yTicks]="4"/>
+          </div>
+
+          <div class="n-card db-metric">
+            <div class="db-metric__head">
+              <div>
+                <div class="n-eyebrow" style="color:var(--c-wind)">Wind speed</div>
+                <div class="db-metric__val">{{ latest.windSpeed.toFixed(2) }} mph</div>
+              </div>
+              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
+            </div>
+            <app-area-chart
+              [values]="getWindValues(chartData)"
+              [labels]="getLabels(chartData)"
+              color="var(--c-wind)" unit="" [height]="150"
+              [decimals]="1" [xEvery]="xEveryVal" [yTicks]="4" [yMin]="0"/>
+          </div>
+
+          <div class="n-card db-metric">
+            <div class="db-metric__head">
+              <div>
+                <div class="n-eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
+                <div class="db-metric__val">{{ getRainTotal(todayData).toFixed(2) }} in</div>
+              </div>
+              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · total' }}</span>
+            </div>
+            <app-area-chart
+              [values]="getRainCumulativeValues(chartData)"
+              [labels]="getLabels(chartData)"
+              color="var(--c-rain)" unit='"' [height]="150"
+              [decimals]="2" [xEvery]="xEveryVal" [yTicks]="4" [yMin]="0"/>
+          </div>
+        </div>
+
+        <!-- Gauges -->
+        <div class="n-detail__gauges">
+          <div class="n-card db-gauge-card">
+            <app-nimbus-compass
+              [deg]="latest.windDirection"
+              [dirName]="getWindDirectionLabel(latest.windDirection)"
+              [speed]="latest.windSpeed"
+              [size]="150"/>
+            <div class="db-gauge-info">
+              <div class="n-eyebrow" style="color:var(--c-wind)">Wind direction</div>
+              <p class="db-gauge-desc">
+                From the <b>{{ getWindDirectionLabel(latest.windDirection) }}</b> ({{ roundDeg(latest.windDirection) }}°)
+                at <b>{{ latest.windSpeed.toFixed(2) }} mph</b>.
+                {{ getWindDescription(latest.windSpeed, getWindDirectionLabel(latest.windDirection)) }}
+              </p>
+              <app-sparkline [values]="getWindValues(todayData)" color="var(--c-wind)" [width]="210" [height]="30" [fluid]="true"/>
+            </div>
+          </div>
+
+          <div class="n-card db-gauge-card">
+            <app-pressure-gauge
+              [value]="convertPressureToInches(latest.pr)"
+              [min]="29.4" [max]="30.4" label="inHg"
+              [trend]="getPressureTrend(todayData)"
+              [size]="150"/>
+            <div class="db-gauge-info">
+              <div class="n-eyebrow" style="color:var(--c-press)">Barometric pressure</div>
+              <p class="db-gauge-desc">
+                {{ getPressureDescription(convertPressureToInches(latest.pr), getPressureTrend(todayData)) }}
+              </p>
+              <app-sparkline [values]="getPressureValues(todayData)" color="var(--c-press)" [width]="210" [height]="30" [fluid]="true"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="db-footer">
+          Data collected from a personal Raspberry Pi weather station · MQTT → broker → API · NIMBUS-01
+        </div>
+      </div>
+    </div>
+  }
 } @else {
   <ng-container *ngTemplateOutlet="loading" />
 }
 
 <ng-template #loading>
-  <p-card header="Temp">
-    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
-    <p-skeleton height="1.25rem" class="mb-2" width="6rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Temp Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Humidity">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Humidity Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Pressure">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Wind Speed">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Wind Speed Variablility">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Wind Direction">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Rainfall Total">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
-  <p-card header="Today's Rainfall Total">
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="2rem" class="mb-2" width="5rem" />
-    <p-skeleton height="25rem" />
-  </p-card>
+  <div class="db-screen">
+    <div class="db-header">
+      <p-skeleton width="80px" height="36px" borderRadius="999px"/>
+      <p-skeleton width="200px" height="36px" borderRadius="999px"/>
+    </div>
+    <div class="db-body">
+      <div class="n-card" style="padding:24px">
+        <p-skeleton width="100%" height="300px"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:0">
+        <p-skeleton height="200px" borderRadius="22px"/>
+        <p-skeleton height="200px" borderRadius="22px"/>
+        <p-skeleton height="200px" borderRadius="22px"/>
+      </div>
+    </div>
+  </div>
 </ng-template>
