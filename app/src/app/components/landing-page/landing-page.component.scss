@@ -1,153 +1,156 @@
-.landing-container {
-  max-width: 600px;
+.n-screen {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lp-wrap { width: 100%; }
+
+.lp-pad {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lp-top {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
 }
 
-// Hero Section
-.hero {
-  text-align: center;
-  padding: 1rem 0;
-}
-
-.temp-display {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.temp-value {
-  font-size: 5rem;
-  font-weight: 200;
-  line-height: 1;
-}
-
-.feels-like {
-  font-size: 1.125rem;
-  opacity: 0.7;
-  margin: 0.5rem 0;
-}
-
-.today-range {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-top: 0.75rem;
-  font-size: 1rem;
-
-  .high {
-    color: var(--p-red-500);
-  }
-
-  .low {
-    color: var(--p-blue-500);
-  }
-}
-
-// Card header
-.card-header {
+.lp-header-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.25rem;
+  gap: 8px;
+}
+
+.lp-theme-btn {
+  width: 36px; height: 36px;
+  background: color-mix(in oklch, var(--tile) 80%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-soft);
+  transition: background .15s ease, color .15s ease;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover { background: var(--tile); color: var(--ink); }
+}
+
+.lp-today-label {
   font-weight: 600;
-
-  i {
-    color: var(--p-primary-color);
-  }
+  font-size: 17px;
+  margin-top: 3px;
 }
 
-// Conditions Grid
-.conditions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+/* Hero */
+.lp-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 22px 22px;
+  min-height: 220px;
 }
 
-.condition-content {
+.lp-hero__in {
+  position: relative;
+  color: white;
+  text-shadow: 0 1px 4px oklch(0 0 0 / .45);
+
+  /* Force all descendant text to stay white over the sky */
+  * { color: inherit; }
+}
+
+.lp-hero__top {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.25rem;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.condition-icon {
-  font-size: 1.5rem;
-  color: var(--p-primary-color);
-  margin-bottom: 0.25rem;
+/* All text inside the hero inherits white from .lp-hero__in */
+.lp-live {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.16em;
 }
 
-.condition-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
+.lp-live__dot {
+  flex-shrink: 0;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: oklch(0.82 0.16 152);
+  box-shadow: 0 0 0 0 oklch(0.82 0.16 152 / .55);
+  animation: ha-tx 1.8s ease-out infinite;
+}
+@keyframes ha-tx {
+  0%  { box-shadow: 0 0 0 0 oklch(0.82 0.16 152 / .55); }
+  70% { box-shadow: 0 0 0 9px transparent; }
+  100%{ box-shadow: 0 0 0 0 transparent; }
 }
 
-.condition-value {
-  font-size: 1.125rem;
-  font-weight: 500;
+.lp-live__sub { margin-left: 3px; font-size: 11px; letter-spacing: .03em; opacity: .8; }
+
+.lp-temprow { display: flex; align-items: flex-start; gap: 5px; margin-top: 14px; }
+.lp-temp { font-weight: 700; font-size: 96px; line-height: .86; letter-spacing: -0.04em; text-shadow: 0 2px 22px oklch(0 0 0 / .45); }
+.lp-temp__u { font-size: 15px; margin-top: 12px; opacity: .85; }
+.lp-cond { margin-top: 9px; font-size: 14.5px; opacity: .9; }
+.lp-feels {
+  margin-top: 12px; display: flex; align-items: center; gap: 12px;
+  font-size: 14px; flex-wrap: wrap; opacity: .9;
+  b { font-weight: 700; opacity: 1; }
+}
+.lp-feels__hl { display: flex; gap: 8px; font-size: 13px; }
+.lp-dot { opacity: .55; }
+
+.lp-sensor {
+  margin-top: 20px; padding-top: 14px;
+  border-top: 1px solid oklch(1 0 0 / .18);
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.lp-sensor__hw { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; opacity: .85; }
+.lp-sensor__ago { font-size: 11px; opacity: .75; }
+
+/* AI card */
+.lp-ai { padding: 16px 18px; }
+.lp-ai__label { display: flex; align-items: center; gap: 7px; color: var(--accent); }
+.lp-ai__text { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); text-wrap: pretty; }
+
+/* Stat tiles */
+.lp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.lp-tile { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-height: 132px; }
+.lp-tile .n-stat__val { margin-top: 2px; }
+.lp-meter { margin-top: auto; padding-top: 8px; }
+
+.lp-tile--wind { justify-content: flex-start; }
+.lp-wind-row { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+.lp-wind-val { font-size: 26px !important; }
+.lp-wind-dir { font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
+
+/* CTA + footer */
+.lp-cta { display: flex; }
+.lp-cta .n-btn { width: 100%; }
+.lp-foot { text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
+
+/* Responsive */
+@media (min-width: 640px) {
+  .lp-pad { padding: 28px; gap: 18px; }
+  .lp-temp { font-size: 112px; }
+  .lp-hero { padding: 30px 30px 26px; }
+  .lp-stats { grid-template-columns: repeat(4, 1fr); }
+  .lp-cta { justify-content: flex-start; }
+  .lp-cta .n-btn { width: auto; padding-left: 30px; padding-right: 30px; }
+  .lp-foot { text-align: left; }
 }
 
-// Station Info
-.station-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  opacity: 0.7;
-
-  i {
-    color: var(--p-green-500);
-  }
-}
-
-// Dashboard Link
-.dashboard-link {
-  display: flex;
-  justify-content: center;
-  padding: 0.5rem 0;
-}
-
-// Error State
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  text-align: center;
-
-  i {
-    font-size: 3rem;
-    opacity: 0.5;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    margin: 0;
-  }
-
-  .error-hint {
-    font-size: 0.875rem;
-    opacity: 0.7;
-    margin-top: 0.5rem;
-  }
-}
-
-// Responsive
-@media (max-width: 480px) {
-  .temp-value {
-    font-size: 4rem;
-  }
-
-  .conditions-grid {
-    grid-template-columns: 1fr;
-  }
+@media (min-width: 1000px) {
+  .lp-pad { padding: 36px; gap: 20px; }
+  .lp-temp { font-size: 132px; }
+  .lp-hero { padding: 38px 40px 32px; }
 }
