@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.*;
@@ -41,9 +42,8 @@ public class WeatherSummaryCache {
         return this.currentWeatherSummary.getOrDefault(stationId, new WeatherSummary("No summary available yet", "info"));
     }
 
-    // TODO: Maybe add a check to see if there is a drastic difference between current and previous weather data to run this
-    @Scheduled(cron = "0 */10 * * * *")
-    public void generateSummaryEveryFiveMinutes() {
+    @Scheduled(cron = "0 */30 * * * *")
+    public void generateSummary() {
         log.info("Generating AI Summary...");
         final Flux<WeatherStations> allWeatherStations = this.weatherStationsService.getAllWeatherStations();
 
@@ -57,22 +57,16 @@ public class WeatherSummaryCache {
 
                     return this.weatherSummaryService.getSummary(records.getFirst())
                             .timeout(Duration.ofSeconds(20))
-                            .onErrorResume(error -> {
-                                log.error("Could not retrieve AI Summary!");
-                                return Flux.empty();
-                            })
                             .collect(Collectors.joining())
-                            // TODO: Add retry logic if the mapper is wrong. By default we keep whatever was in the summary previously
                             .flatMap(summary -> Mono.fromCallable(() -> mapper.readValue(summary, WeatherSummary.class))
                                     .subscribeOn(Schedulers.boundedElastic()))
                             .doOnNext(weatherSummary -> {
                                 currentWeatherSummary.put(weatherStation.getStationId(), weatherSummary);
-
                                 log.info("Weather Summary for {} is : {}", weatherStation.getStationName(), weatherSummary.summary());
                             })
-                            .doOnError(error -> {
-                                log.error("Failed to parse summary");
-                            });
+                            .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
+                            .doOnError(error -> log.error("Failed to generate summary for station {} after retries", weatherStation.getStationId()))
+                            .onErrorResume(error -> Mono.empty());
                 }, 4)
                 .subscribe();
     }
