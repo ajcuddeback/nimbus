@@ -62,18 +62,101 @@
               </div>
             }
             @if (sky.glyph?.type === 'moon') {
+              @let moonPhase = getMoonPhase();
               <div class="ha-glyph" [style.left]="sky.glyph!.left" [style.top]="sky.glyph!.top">
                 <svg class="ha-moon" [attr.width]="sky.glyph!.size" [attr.height]="sky.glyph!.size" viewBox="0 0 44 44">
-                  <defs>
-                    <radialGradient id="ha-moonG" cx="38%" cy="32%" r="78%">
-                      <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                      <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                    </radialGradient>
-                  </defs>
-                  <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG)"/>
-                  <circle cx="18" cy="18.5" r="2.2" fill="oklch(0.80 0.05 78 / .55)"/>
-                  <circle cx="26" cy="24.5" r="1.5" fill="oklch(0.80 0.05 78 / .5)"/>
-                  <circle cx="20.5" cy="26" r="1" fill="oklch(0.80 0.05 78 / .45)"/>
+                  @if (moonPhase === MoonPhase.FULL_MOON) {
+                    <defs>
+                      <radialGradient id="ha-moonG" cx="38%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG)"/>
+                    <circle cx="18" cy="18.5" r="2.2" fill="oklch(0.80 0.05 78 / .55)"/>
+                    <circle cx="26" cy="24.5" r="1.5" fill="oklch(0.80 0.05 78 / .5)"/>
+                    <circle cx="20.5" cy="26" r="1" fill="oklch(0.80 0.05 78 / .45)"/>
+                  } @else if (moonPhase === MoonPhase.WAXING_GIBBOUS) {
+                    <defs>
+                      <radialGradient id="ha-moonG-wg" cx="55%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-wg-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
+                    <circle cx="27" cy="22" r="10.5" fill="url(#ha-moonG-wg)" clip-path="url(#ha-wg-clip)"/>
+                    <circle cx="25" cy="25" r="1.5" fill="oklch(0.80 0.05 78 / .5)" clip-path="url(#ha-wg-clip)"/>
+                  } @else if (moonPhase === MoonPhase.FIRST_QUARTER) {
+                    <defs>
+                      <radialGradient id="ha-moonG-fq" cx="55%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-fq-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-fq)"/>
+                    <circle cx="25" cy="25" r="1.5" fill="oklch(0.80 0.05 78 / .5)"/>
+                    <rect x="-1" y="0" width="23" height="44" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-fq-clip)"/>
+                  } @else if (moonPhase === MoonPhase.WAXING_CRESCENT) {
+                    <defs>
+                      <radialGradient id="ha-moonG-wc" cx="55%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-wc-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-wc)"/>
+                    <circle cx="12" cy="22" r="15" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-wc-clip)"/>
+                  } @else if (moonPhase === MoonPhase.NEW_MOON) {
+                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
+                  } @else if (moonPhase === MoonPhase.WANING_CRESCENT) {
+                    <defs>
+                      <radialGradient id="ha-moonG-nc" cx="45%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-nc-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-nc)"/>
+                    <circle cx="32" cy="22" r="15" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-nc-clip)"/>
+                  } @else if (moonPhase === MoonPhase.THIRD_QUARTER) {
+                    <defs>
+                      <radialGradient id="ha-moonG-tq" cx="45%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-tq-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-tq)"/>
+                    <circle cx="19" cy="19" r="2.2" fill="oklch(0.80 0.05 78 / .55)"/>
+                    <rect x="22" y="0" width="23" height="44" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-tq-clip)"/>
+                  } @else if (moonPhase === MoonPhase.WANING_GIBBOUS) {
+                    <defs>
+                      <radialGradient id="ha-moonG-ng" cx="45%" cy="32%" r="78%">
+                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
+                      </radialGradient>
+                      <clipPath id="ha-ng-clip">
+                        <circle cx="22" cy="22" r="11.5"/>
+                      </clipPath>
+                    </defs>
+                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
+                    <circle cx="17" cy="22" r="10.5" fill="url(#ha-moonG-ng)" clip-path="url(#ha-ng-clip)"/>
+                    <circle cx="17" cy="22" r="10.5" fill="url(#ha-moonG-ng)" clip-path="url(#ha-ng-clip)"/>
+                    <circle cx="19" cy="19" r="2.2" fill="oklch(0.80 0.05 78 / .55)" clip-path="url(#ha-ng-clip)"/>
+                  }
+
                 </svg>
               </div>
             }

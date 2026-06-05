@@ -9,9 +9,10 @@ import { WeatherData } from '../../models/weather-data.interface';
 import { LinearMeterComponent } from '../shared/linear-meter/linear-meter.component';
 import { NimbusCompassComponent } from '../shared/nimbus-compass/nimbus-compass.component';
 import { ThemeService } from '../../services/theme.service';
+import {MoonPhase} from '../../models/moonPhase.enum';
 
-type Tod = 'morning' | 'afternoon' | 'evening' | 'night';
-type Cond = 'clear' | 'cloudy' | 'rain' | 'storm';
+type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'storm';
 
 interface SkyGlyph { type: 'sun' | 'moon'; left: string; top: string; size: number; color?: string; }
 interface CloudItem { l: number; t: number; s: number; o: number; }
@@ -21,14 +22,14 @@ interface SkyTheme {
   clouds: Clouds | null; rainLevel: 0 | 1 | 2; lightning: boolean;
 }
 
-const TOD_CONFIG = {
+const TIME_OF_DAY_CONFIG = {
   morning:   { grad: 'linear-gradient(180deg,oklch(0.66 0.105 252) 0%,oklch(0.80 0.075 234) 52%,oklch(0.90 0.075 74) 100%)', glow: 'radial-gradient(86% 70% at 84% 30%,oklch(0.94 0.10 84/.85),transparent 46%)', sun: { left:'82%', top:'30%', size:60, color:'oklch(0.94 0.105 86)' } },
   afternoon: { grad: 'linear-gradient(180deg,oklch(0.575 0.13 252) 0%,oklch(0.76 0.10 236) 55%,oklch(0.88 0.06 232) 100%)', glow: 'radial-gradient(78% 66% at 84% 12%,oklch(0.97 0.085 96/.9),transparent 44%)', sun: { left:'82%', top:'14%', size:64, color:'oklch(0.97 0.09 96)' } },
   evening:   { grad: 'linear-gradient(180deg,oklch(0.34 0.10 292) 0%,oklch(0.54 0.145 24) 52%,oklch(0.72 0.15 56) 100%)', glow: 'radial-gradient(100% 80% at 78% 92%,oklch(0.83 0.16 58/.9),transparent 52%)', sun: { left:'77%', top:'82%', size:72, color:'oklch(0.85 0.155 60)' } },
-  night:     { grad: 'linear-gradient(180deg,oklch(0.180 0.055 272) 0%,oklch(0.250 0.062 266) 48%,oklch(0.320 0.050 258) 100%)', glow: 'radial-gradient(150% 95% at 50% 124%,oklch(0.56 0.10 52/.42),transparent 60%)', moon: { left:'80%', top:'18%', size:50 } },
+  night:     { grad: 'linear-gradient(180deg,oklch(0.180 0.055 272) 0%,oklch(0.250 0.062 266) 48%,oklch(0.320 0.050 258) 100%)', glow: 'radial-gradient(150% 95% at 50% 124%,oklch(0.56 0.10 52/.42),transparent 60%)', moon: { left:'80%', top:'18%', size:60 } },
 } as const;
 
-const VEIL: Record<Cond, string | null> = {
+const CONDITION_SKY_OVERLAY: Record<WeatherCondition, string | null> = {
   clear: null,
   cloudy: 'linear-gradient(180deg,oklch(0.60 0.012 250/.42),oklch(0.54 0.012 250/.52))',
   rain:   'linear-gradient(180deg,oklch(0.46 0.014 252/.58),oklch(0.40 0.016 256/.68))',
@@ -94,7 +95,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     this.clockSub = interval(1000).subscribe(() => {
       this.updateAgo();
       // refresh the displayed clock once per minute
-      if (new Date().getSeconds() === 0) this.updateClock();
+      if (new Date().getSeconds() === 0) {
+        this.updateClock();
+      }
     });
   }
 
@@ -107,7 +110,9 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   private updateAgo(): void {
-    if (!this.latestTimestamp) return;
+    if (!this.latestTimestamp) {
+      return;
+    }
     const sec = Math.max(0, Math.floor(Date.now() / 1000 - this.latestTimestamp));
     if (sec < 60) {
       this.lastReadingAgo = `${sec}s ago`;
@@ -118,43 +123,63 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  get tod(): Tod {
+  // TODO: Change TOD to account for location and TZ to get proper sunset
+  get timeOfDay(): TimeOfDay {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return 'morning';
-    if (h >= 12 && h < 17) return 'afternoon';
-    if (h >= 17 && h < 21) return 'evening';
+    if (h >= 5 && h < 12) {
+      return 'morning';
+    }
+    if (h >= 12 && h < 17) {
+      return 'afternoon';
+    }
+    if (h >= 17 && h < 20) {
+      return 'evening';
+    }
     return 'night';
   }
 
-  getCondition(latest: WeatherData): Cond {
-    if (!latest) return 'clear';
+  getCondition(latest: WeatherData): WeatherCondition {
+    if (!latest) {
+      return 'clear';
+    }
     const mm = latest.rainfall ?? 0;
-    if (mm > 2) return 'storm';
-    if (mm > 0.3) return 'rain';
+    if (mm > 2) {
+      return 'storm';
+    }
+    if (mm > 0.3) {
+      return 'rain';
+    }
     return 'clear';
   }
 
   computeSkyTheme(latest: WeatherData): SkyTheme {
-    const tod = this.tod;
-    const cond = this.getCondition(latest);
-    const base = TOD_CONFIG[tod] as any;
+    const timeOfDay = this.timeOfDay;
+    const condition = this.getCondition(latest);
+    const base = TIME_OF_DAY_CONFIG[timeOfDay] as any;
     const layers: string[] = [];
-    if (cond === 'clear') layers.push(base.glow);
+    if (condition === 'clear') {
+      layers.push(base.glow);
+    }
     layers.push(base.grad);
     let gradient = layers.join(', ');
-    const veil = VEIL[cond];
-    if (veil) gradient = veil + ', ' + gradient;
+    const skyOverlay = CONDITION_SKY_OVERLAY[condition];
+    if (skyOverlay) {
+      gradient = skyOverlay + ', ' + gradient;
+    }
     let glyph: SkyGlyph | null = null;
-    if (cond === 'clear') {
-      if (tod === 'night' && base.moon) glyph = { type:'moon', ...base.moon };
-      else if (base.sun) glyph = { type:'sun', ...base.sun };
+    if (condition === 'clear') {
+      if (timeOfDay === 'night' && base.moon) {
+        glyph = { type: 'moon', ...base.moon };
+      } else if (base.sun) {
+        glyph = { type: 'sun', ...base.sun };
+      }
     }
     return {
       gradient, glyph,
-      stars: tod === 'night' && cond === 'clear',
-      clouds: CLOUD_CONFIG[cond] ?? null,
-      rainLevel: cond === 'storm' ? 2 : cond === 'rain' ? 1 : 0,
-      lightning: cond === 'storm',
+      stars: timeOfDay === 'night' && condition === 'clear',
+      clouds: CLOUD_CONFIG[condition] ?? null,
+      rainLevel: condition === 'storm' ? 2 : condition === 'rain' ? 1 : 0,
+      lightning: condition === 'storm',
     };
   }
 
@@ -165,8 +190,8 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     return `0 0 48px 8px color-mix(in oklch,${color} 50%,transparent)`;
   }
 
-  getConditionLabel(cond: Cond): string {
-    return { clear:'Clear', cloudy:'Cloudy', rain:'Raining', storm:'Thunderstorm' }[cond];
+  getConditionLabel(condition: WeatherCondition): string {
+    return { clear:'Clear', cloudy:'Cloudy', rain:'Raining', storm:'Thunderstorm' }[condition];
   }
 
   formatTempShort(temp: number): string {
@@ -178,13 +203,17 @@ export class LandingPageComponent implements OnInit, OnDestroy {
   }
 
   getPeakTemp(weatherData: WeatherData[]): string {
-    if (!weatherData?.length) return '--';
+    if (!weatherData?.length) {
+      return '--';
+    }
     const peak = Math.max(...weatherData.map(d => d.temp));
     return isFinite(peak) ? this.weatherUtils.formatTempShort(peak, this.tempFormat) : '--';
   }
 
   getMinTemp(weatherData: WeatherData[]): string {
-    if (!weatherData?.length) return '--';
+    if (!weatherData?.length) {
+      return '--';
+    }
     const min = Math.min(...weatherData.map(d => d.temp));
     return isFinite(min) ? this.weatherUtils.formatTempShort(min, this.tempFormat) : '--';
   }
@@ -205,4 +234,49 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     const f = latest.temp * 9/5 + 32;
     return f.toFixed(0);
   }
+
+
+  getMoonPhase() {
+    const knownNewMoon = new Date('2000-01-06T18:14:00Z').getTime();
+    const now = Date.now();
+    const diffDays = (now - knownNewMoon) / (1000 * 60 * 60 * 24);
+    const lunarCycleDays = 29.530588853;
+    const dayDif =  diffDays % lunarCycleDays; // 0–29.53, where 0 = new moon
+
+    if (dayDif === 0) {
+      return MoonPhase.NEW_MOON;
+    }
+
+    if (dayDif > 0 && dayDif < 7.4) {
+      return MoonPhase.WAXING_CRESCENT;
+    }
+
+    if (dayDif === 7.4) {
+      return MoonPhase.FIRST_QUARTER;
+    }
+
+    if (dayDif > 7.4 && dayDif < 14.8) {
+      return MoonPhase.WAXING_GIBBOUS;
+    }
+
+    if (dayDif === 14.8) {
+      return MoonPhase.FULL_MOON;
+    }
+
+    if (dayDif > 14.8 && dayDif < 22.1) {
+      return MoonPhase.WANING_GIBBOUS;
+    }
+
+    if (dayDif === 22.1) {
+      return MoonPhase.THIRD_QUARTER;
+    }
+
+    if (dayDif > 22.1 && dayDif <= 29.5) {
+      return MoonPhase.WANING_CRESCENT;
+    }
+
+    return MoonPhase.FULL_MOON;
+  }
+
+  protected readonly MoonPhase = MoonPhase;
 }
