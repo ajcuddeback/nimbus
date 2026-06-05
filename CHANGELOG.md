@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.5.0](https://github.com/ajcuddeback/nimbus/compare/v1.4.1...v1.5.0) (2026-06-04)
+
+
+### Features
+
+* Improving weather summaries, reducing weather summaries to once every 30 minutes, paramterizing values for prompt. ([44242ad](https://github.com/ajcuddeback/nimbus/commit/44242ad7ba927fc96999a3b1a56657a672bb8f4e))
+* UI Overhaul ([752f0b8](https://github.com/ajcuddeback/nimbus/commit/752f0b8b47dd7c97a22369ab35d9f24c0d6a1444))
+* UI Overhaul ([e7629ed](https://github.com/ajcuddeback/nimbus/commit/e7629ed1d91f63303932f67ffb395361bd0c78d0))
+* UI Overhaul ([0483b22](https://github.com/ajcuddeback/nimbus/commit/0483b22bf7dd8c2787681e6c92ff82de009c0920))
+* UI Overhaul ([066a826](https://github.com/ajcuddeback/nimbus/commit/066a826e64cf71796b203517eefd86fedb6192d1))
+* UI Revamp ([d020d93](https://github.com/ajcuddeback/nimbus/commit/d020d932c2484c4ab6a191f2aa51d852c1322294))
+
+
+### Bug Fixes
+
+* couple fixes ([7e77690](https://github.com/ajcuddeback/nimbus/commit/7e776909651dd2840e4179ef8fd24339a4e4b648))
+
 ## [1.4.1](https://github.com/ajcuddeback/nimbus/compare/v1.4.0...v1.4.1) (2026-01-31)
 
 
