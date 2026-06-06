@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/ajcuddeback/nimbus/compare/v1.5.0...v1.6.0) (2026-06-05)
+
+
+### Features
+
+* Moon in temp background now changes to appropriate moon cycle ([04f0b0a](https://github.com/ajcuddeback/nimbus/commit/04f0b0ad09ead51af8b5100a3db5b94e5c24b665))
+
 ## [1.5.0](https://github.com/ajcuddeback/nimbus/compare/v1.4.1...v1.5.0) (2026-06-04)
 
 
