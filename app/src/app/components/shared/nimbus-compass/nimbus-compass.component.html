@@ -1,0 +1,14 @@
+<div class="compass-wrap">
+  <div echarts [options]="opts" [autoResize]="true"
+       [style.width.px]="size" [style.height.px]="size"></div>
+  @if (!compact) {
+    <div class="compass-info">
+      <div class="compass-speed">
+        {{ speed.toFixed(2) }}&nbsp;<span class="compass-speed__unit">mph {{ dirName }}</span>
+      </div>
+      @if (gust != null) {
+        <div class="compass-gust">gust {{ gust.toFixed(1) }}</div>
+      }
+    </div>
+  }
+</div>

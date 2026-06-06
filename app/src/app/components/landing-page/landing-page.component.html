@@ -1,4 +1,4 @@
-@if (weatherData$ | async; as weatherData) {
+﻿@if (weatherData$ | async; as weatherData) {
   @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
   } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
@@ -10,17 +10,14 @@
     @let todayData = weatherData.today.data;
     @let sky = computeSkyTheme(latest);
 
-    <div class="n-screen lp-wrap">
+    <div class="screen lp-wrap">
       <div class="lp-pad">
 
         <!-- Header -->
         <header class="lp-top">
-          <div>
-            <div class="n-eyebrow">Winter Haven, FL</div>
-            <div class="lp-today-label">Today</div>
-          </div>
+          <div class="eyebrow">Winter Haven, FL</div>
           <div class="lp-header-actions">
-            <span class="n-pill"><span class="n-live-dot"></span>&nbsp;{{ currentTime }}</span>
+            <span class="pill"><span class="live-dot"></span>&nbsp;{{ currentTime }}</span>
             <button class="lp-theme-btn" (click)="toggleTheme()" [title]="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
               @if (isDark) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -39,7 +36,7 @@
         </header>
 
         <!-- Sky Hero Card -->
-        <div class="lp-hero n-card ha-hero--sky">
+        <div class="lp-hero card ha-hero--sky">
           <!-- Sky background layer -->
           <div class="ha-sky">
             <div class="ha-sky__grad" [style.background]="sky.gradient"></div>
@@ -198,13 +195,13 @@
               <span class="lp-temp">{{ tempInF(latest) }}</span>
               <span class="lp-temp__u">°F</span>
             </div>
-            <div class="lp-cond">{{ getConditionLabel(getCondition(latest)) }} · {{ currentTime }}</div>
+            <div class="lp-cond">{{ getConditionLabel(getCondition(latest)) }}</div>
             <div class="lp-feels">
               <span>Feels like <b>{{ formatTempShort(calculateFeelsLikeTemp(latest.temp, latest.hum, latest.windSpeed)) }}</b></span>
               <span class="lp-feels__hl">
-                <span>H {{ getPeakTemp(todayData) }}</span>
+                <span>H {{ getPeakTemp(todayData, latest) }}</span>
                 <span class="lp-dot">·</span>
-                <span>L {{ getMinTemp(todayData) }}</span>
+                <span>L {{ getMinTemp(todayData, latest) }}</span>
               </span>
             </div>
             <div class="lp-sensor">
@@ -215,14 +212,14 @@
                 </span>
                 Raspberry Pi · BME280 sensor
               </span>
-              <span class="lp-sensor__ago">last reading {{ lastReadingAgo }}</span>
+              <span class="lp-sensor__ago">Last Reading {{ lastReadingAgo }}</span>
             </div>
           </div>
         </div>
 
         <!-- AI Summary -->
-        <div class="lp-ai n-card">
-          <div class="n-eyebrow lp-ai__label">
+        <div class="lp-ai card">
+          <div class="eyebrow lp-ai__label">
             <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6z" fill="currentColor"/>
             </svg>
@@ -233,42 +230,42 @@
 
         <!-- Stat tiles -->
         <div class="lp-stats">
-          <div class="n-card lp-tile">
-            <div class="n-stat__label">Humidity</div>
-            <div class="n-stat__val">{{ latest.hum.toFixed(0) }}<span class="n-stat__unit">%</span></div>
+          <div class="card lp-tile">
+            <div class="stat__label">Humidity</div>
+            <div class="stat__val">{{ latest.hum.toFixed(0) }}<span class="stat__unit">%</span></div>
             <div class="lp-meter">
               <app-linear-meter [value]="latest.hum" [min]="0" [max]="100"
                 color="var(--c-humid)" [trackLabels]="['dry','humid']"/>
             </div>
           </div>
 
-          <div class="n-card lp-tile">
-            <div class="n-stat__label">Pressure</div>
-            <div class="n-stat__val">{{ convertPressureToInches(latest.pr).toFixed(2) }}<span class="n-stat__unit">inHg</span></div>
+          <div class="card lp-tile">
+            <div class="stat__label">Pressure</div>
+            <div class="stat__val">{{ convertPressureToInches(latest.pr).toFixed(2) }}<span class="stat__unit">inHg</span></div>
             <div class="lp-meter">
               <app-linear-meter [value]="convertPressureToInches(latest.pr)" [min]="29.4" [max]="30.4"
                 color="var(--c-press)" [marker]="true" [trackLabels]="['low','high']"/>
             </div>
           </div>
 
-          <div class="n-card lp-tile lp-tile--wind">
-            <div class="n-stat__label">Wind</div>
+          <div class="card lp-tile lp-tile--wind">
+            <div class="stat__label">Wind</div>
             <div class="lp-wind-row">
               <app-nimbus-compass [deg]="latest.windDirection"
                 [dirName]="getWindDirectionLabel(latest.windDirection)"
-                [speed]="latest.windSpeed" [size]="72" [compact]="true"/>
+                [speed]="latest.windSpeed" [size]="72" [compact]="true" [showLabels]="false"/>
               <div>
-                <div class="n-stat__val lp-wind-val">
-                  {{ latest.windSpeed.toFixed(2) }}<span class="n-stat__unit">mph</span>
+                <div class="stat__val lp-wind-val">
+                  {{ latest.windSpeed.toFixed(2) }}<span class="stat__unit">mph</span>
                 </div>
                 <div class="lp-wind-dir">{{ getWindDirectionLabel(latest.windDirection) }}</div>
               </div>
             </div>
           </div>
 
-          <div class="n-card lp-tile">
-            <div class="n-stat__label">Rain today</div>
-            <div class="n-stat__val">{{ getRainTotal(todayData).toFixed(2) }}<span class="n-stat__unit">in</span></div>
+          <div class="card lp-tile">
+            <div class="stat__label">Rain today</div>
+            <div class="stat__val">{{ getRainTotal(todayData).toFixed(2) }}<span class="stat__unit">in</span></div>
             <div class="lp-meter">
               <app-linear-meter [value]="getRainTotal(todayData)" [min]="0" [max]="1"
                 color="var(--c-rain)" [trackLabels]="['0','1 in']"/>
@@ -278,7 +275,7 @@
 
         <!-- CTA -->
         <div class="lp-cta">
-          <button class="n-btn" routerLink="/dashboard">
+          <button class="btn" routerLink="/dashboard">
             View detailed data
             <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M3 8h9M8 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -295,16 +292,16 @@
 }
 
 <ng-template #loading>
-  <div class="n-screen lp-wrap">
+  <div class="screen lp-wrap">
     <div class="lp-pad">
       <div class="lp-top">
         <p-skeleton width="160px" height="18px"/>
         <p-skeleton width="90px" height="28px"/>
       </div>
-      <div class="lp-hero n-card" style="min-height:240px">
+      <div class="lp-hero card" style="min-height:240px">
         <p-skeleton width="100%" height="240px" borderRadius="22px"/>
       </div>
-      <div class="n-card" style="padding:18px">
+      <div class="card" style="padding:18px">
         <p-skeleton width="80px" height="12px" styleClass="mb-3"/>
         <p-skeleton width="100%" height="48px"/>
       </div>
@@ -319,18 +316,18 @@
 </ng-template>
 
 <ng-template #errorState>
-  <div class="n-screen lp-wrap" style="display:flex;align-items:center;justify-content:center">
-    <div class="n-card" style="padding:36px;text-align:center;max-width:340px">
-      <div class="n-eyebrow" style="color:var(--c-temp)">Connection error</div>
+  <div class="screen lp-wrap" style="display:flex;align-items:center;justify-content:center">
+    <div class="card" style="padding:36px;text-align:center;max-width:340px">
+      <div class="eyebrow" style="color:var(--c-temp)">Connection error</div>
       <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px;line-height:1.5">Unable to load weather data. Check your connection and try again.</p>
     </div>
   </div>
 </ng-template>
 
 <ng-template #emptyState>
-  <div class="n-screen lp-wrap" style="display:flex;align-items:center;justify-content:center">
-    <div class="n-card" style="padding:36px;text-align:center;max-width:340px">
-      <div class="n-eyebrow">Waiting for data</div>
+  <div class="screen lp-wrap" style="display:flex;align-items:center;justify-content:center">
+    <div class="card" style="padding:36px;text-align:center;max-width:340px">
+      <div class="eyebrow">Waiting for data</div>
       <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px;line-height:1.5">No readings received yet from the station.</p>
     </div>
   </div>

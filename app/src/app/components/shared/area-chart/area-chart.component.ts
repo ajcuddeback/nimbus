@@ -1,50 +1,19 @@
-import { Component, Input, OnChanges } from '@angular/core';
-import { smoothPath } from '../../../utils/chart-utils';
+import { Component, Input, OnChanges, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import type { EChartsOption } from 'echarts';
+import { ChartService } from '../../../services/chart.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-area-chart',
-  template: `
-    <div style="position:relative;width:100%" (mousemove)="onMouseMove($event)" (mouseleave)="hoverIdx = null">
-      <svg [attr.viewBox]="'0 0 760 ' + height" width="100%" style="display:block;overflow:visible">
-        <defs>
-          <linearGradient [id]="gradId" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" [attr.stop-color]="color" stop-opacity="0.26"/>
-            <stop offset="92%" [attr.stop-color]="color" stop-opacity="0.02"/>
-          </linearGradient>
-        </defs>
-        @for (tick of ticks; track $index) {
-          <line [attr.x1]="PAD_L" [attr.x2]="760 - PAD_R" [attr.y1]="tick.y" [attr.y2]="tick.y"
-                stroke="var(--line)" stroke-width="1" [attr.stroke-dasharray]="$index === 0 ? '0' : '2 5'"/>
-          <text [attr.x]="PAD_L - 10" [attr.y]="tick.y + 3.5" text-anchor="end"
-                font-family="var(--mono,monospace)" font-size="10.5" fill="var(--ink-faint)">{{ tick.label }}</text>
-        }
-        @for (xl of xTicks; track $index) {
-          @if (xl.show) {
-            <text [attr.x]="xl.x" [attr.y]="height - 9" text-anchor="middle"
-                  font-family="var(--mono,monospace)" font-size="10" fill="var(--ink-faint)">{{ xl.label }}</text>
-          }
-        }
-        <path [attr.d]="fillD" [attr.fill]="'url(#' + gradId + ')'"/>
-        <path [attr.d]="lineD" fill="none" [attr.stroke]="color" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-        @if (hoverIdx != null) {
-          <line [attr.x1]="pts[hoverIdx][0]" [attr.x2]="pts[hoverIdx][0]"
-                [attr.y1]="PAD_T" [attr.y2]="height - PAD_B"
-                stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="3 3"/>
-          <circle [attr.cx]="pts[hoverIdx][0]" [attr.cy]="pts[hoverIdx][1]"
-                  r="4.5" fill="var(--card)" [attr.stroke]="color" stroke-width="2.4"/>
-        }
-      </svg>
-      @if (hoverIdx != null) {
-        <div style="position:absolute;top:4px;background:var(--ink);color:var(--card);padding:7px 10px;border-radius:10px;font-size:11.5px;pointer-events:none;box-shadow:var(--shadow);white-space:nowrap;font-family:var(--mono,monospace)"
-             [style.left]="tooltipLeft">
-          <div style="opacity:0.6;font-size:10px">{{ labels[hoverIdx] }}</div>
-          <div style="font-weight:500;margin-top:2px">{{ values[hoverIdx].toFixed(decimals) }}{{ unit }}</div>
-        </div>
-      }
-    </div>
-  `
+  imports: [NgxEchartsDirective],
+  templateUrl: './area-chart.component.html',
+  styleUrl: './area-chart.component.scss'
 })
-export class AreaChartComponent implements OnChanges {
+export class AreaChartComponent implements OnChanges, OnInit {
   @Input() values: number[] = [];
   @Input() labels: string[] = [];
   @Input() color = 'var(--c-temp)';
@@ -56,67 +25,108 @@ export class AreaChartComponent implements OnChanges {
   @Input() xEvery = 3;
   @Input() decimals = 1;
 
-  readonly PAD_L = 46;
-  readonly PAD_R = 18;
-  readonly PAD_T = 16;
-  readonly PAD_B = 30;
-  readonly W = 760;
+  opts: EChartsOption = {};
+  private ecInstance?: any;
 
-  gradId = `ar-${Math.random().toString(36).slice(2, 9)}`;
-  pts: [number, number][] = [];
-  lineD = '';
-  fillD = '';
-  ticks: { y: number; label: string }[] = [];
-  xTicks: { x: number; label: string; show: boolean }[] = [];
-  hoverIdx: number | null = null;
+  private destroyRef = inject(DestroyRef);
+  private chart = inject(ChartService);
+  private theme = inject(ThemeService);
 
-  private get dMin(): number {
-    const m = Math.min(...this.values);
-    return this.yMin != null ? this.yMin : m;
-  }
-  private get dMax(): number {
-    const m = Math.max(...this.values);
-    const raw = this.yMax != null ? this.yMax : m;
-    return raw === this.dMin ? this.dMin + 1 : raw;
+  onChartInit(ec: any): void { this.ecInstance = ec; }
+
+  ngOnInit(): void {
+    this.theme.themeChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.build());
+    fromEvent(window, 'resize').pipe(
+      debounceTime(150),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => this.ecInstance?.resize());
   }
 
-  private xFn(i: number): number {
-    return this.PAD_L + (i / Math.max(1, this.values.length - 1)) * (this.W - this.PAD_L - this.PAD_R);
-  }
-  private yFn(v: number, dMin = this.dMin, dMax = this.dMax): number {
-    return this.PAD_T + (1 - (v - dMin) / (dMax - dMin)) * (this.height - this.PAD_T - this.PAD_B);
-  }
+  ngOnChanges(): void { this.build(); }
 
-  ngOnChanges(): void {
+  private build(): void {
     if (!this.values?.length) return;
-    const dMin = this.dMin, dMax = this.dMax;
-    this.pts = this.values.map((v, i): [number, number] => [this.xFn(i), this.yFn(v, dMin, dMax)]);
-    this.lineD = smoothPath(this.pts);
-    const last = this.pts[this.pts.length - 1];
-    const base = this.yFn(dMin, dMin, dMax);
-    this.fillD = `${this.lineD} L ${last[0]},${base} L ${this.pts[0][0]},${base} Z`;
-    this.ticks = Array.from({ length: this.yTicks }, (_, i) => {
-      const v = dMin + (i / (this.yTicks - 1)) * (dMax - dMin);
-      return { y: this.yFn(v, dMin, dMax), label: `${Math.round(v)}${this.unit}` };
-    });
-    this.xTicks = this.labels.map((label, i) => ({
-      x: this.xFn(i),
-      label: label.replace(':00', ''),
-      show: i % this.xEvery === 0 || i === this.labels.length - 1
-    }));
-  }
 
-  get tooltipLeft(): string {
-    if (this.hoverIdx == null) return '0';
-    const pct = (this.pts[this.hoverIdx][0] / this.W) * 100;
-    return `clamp(8px,calc(${pct}% - 52px),calc(100% - 116px))`;
-  }
+    const color    = this.chart.cssToRgb(this.color);
+    const inkFaint = this.chart.cssToRgb('var(--ink-faint)');
+    const ink      = this.chart.cssToRgb('var(--ink)');
+    const card     = this.chart.cssToRgb('var(--card)');
+    const line     = this.chart.cssToRgb('var(--line)');
+    const dec      = this.decimals;
+    const unit     = this.unit;
 
-  onMouseMove(event: MouseEvent): void {
-    const el = event.currentTarget as HTMLElement;
-    const rect = el.getBoundingClientRect();
-    const px = ((event.clientX - rect.left) / rect.width) * this.W;
-    let idx = Math.round(((px - this.PAD_L) / (this.W - this.PAD_L - this.PAD_R)) * (this.values.length - 1));
-    this.hoverIdx = Math.max(0, Math.min(this.values.length - 1, idx));
+    this.opts = {
+      backgroundColor: 'transparent',
+      animation: false,
+      grid: { top: 16, right: 18, bottom: 30, left: 8, containLabel: true },
+      xAxis: {
+        type: 'category',
+        data: this.labels.map(l => l.replace(':00', '')),
+        boundaryGap: false,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: {
+          color: inkFaint,
+          fontFamily: 'monospace',
+          fontSize: 10,
+          interval: this.xEvery - 1,
+          showMaxLabel: true,
+          hideOverlap: true
+        }
+      },
+      yAxis: {
+        type: 'value',
+        min: this.yMin,
+        max: this.yMax,
+        scale: this.yMin === undefined,
+        splitNumber: this.yTicks - 1,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: inkFaint,
+          fontFamily: 'monospace',
+          fontSize: 10.5,
+          formatter: (v: number) => `${v}${unit}`
+        },
+        splitLine: {
+          lineStyle: { color: line, type: [2, 5] as any, width: 1 }
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'line',
+          lineStyle: { color: inkFaint, type: [3, 3] as any, width: 1 }
+        },
+        backgroundColor: ink,
+        borderColor: 'transparent',
+        borderRadius: 10,
+        padding: [7, 10],
+        textStyle: { color: card, fontFamily: 'monospace', fontSize: 11.5 },
+        formatter: (params: any) => {
+          const p = Array.isArray(params) ? params[0] : params;
+          return `<span style="opacity:.6;font-size:10px;display:block">${p.name}</span>`
+            + `<span style="font-weight:500;margin-top:2px;display:block">${Number(p.value).toFixed(dec)}${unit}</span>`;
+        }
+      },
+      series: [{
+        type: 'line',
+        data: this.values,
+        smooth: 0.2,
+        symbol: 'none',
+        lineStyle: { color, width: 2.4 },
+        emphasis: { disabled: true },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0,    color: this.chart.withAlpha(color, 0.26) },
+              { offset: 0.92, color: this.chart.withAlpha(color, 0.02) }
+            ]
+          } as any
+        }
+      }]
+    };
   }
 }

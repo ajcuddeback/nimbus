@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   isDark = false;
+
+  private readonly _themeChange = new Subject<void>();
+  readonly themeChange$ = this._themeChange.asObservable();
 
   constructor() {
     const saved = localStorage.getItem('nimbus-theme');
@@ -34,5 +38,6 @@ export class ThemeService {
     } else {
       document.documentElement.removeAttribute('data-warmth');
     }
+    this._themeChange.next();
   }
 }

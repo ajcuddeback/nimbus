@@ -1,0 +1,7 @@
+<div class="gauge-wrap">
+  <div echarts [options]="opts" [autoResize]="false"
+       [style.width.px]="size" [style.height.px]="size"></div>
+  @if (trend) {
+    <div class="gauge-trend">{{ trend }}</div>
+  }
+</div>

@@ -1,4 +1,4 @@
-/* Global reset */
+﻿/* Global reset */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; border: none; outline: none; }
 
@@ -50,21 +50,21 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
 }
 
 /* ---- Shared primitives ---- */
-.n-card {
+.card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r);
   box-shadow: var(--shadow);
 }
 
-.n-eyebrow {
+.eyebrow {
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.n-pill {
+.pill {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 11px; letter-spacing: 0.02em;
   color: var(--ink-soft);
@@ -74,20 +74,20 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
   padding: 5px 11px;
 }
 
-.n-live-dot {
+.live-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--c-press);
   box-shadow: 0 0 0 0 color-mix(in oklch, var(--c-press) 55%, transparent);
-  animation: n-pulse 2.4s ease-out infinite;
+  animation: pulse 2.4s ease-out infinite;
 }
 
-@keyframes n-pulse {
+@keyframes pulse {
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--c-press) 55%, transparent); }
   70%  { box-shadow: 0 0 0 7px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-.n-btn {
+.btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-weight: 560; font-size: 14px;
   color: var(--card); background: var(--ink);
@@ -98,24 +98,24 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
   &:hover { transform: translateY(-1px); opacity: .92; }
 }
 
-.n-btn--ghost {
+.btn--ghost {
   background: transparent; color: var(--ink);
   border: 1px solid var(--line);
   &:hover { background: var(--tile); }
 }
 
-.n-stat__label {
+.stat__label {
   font-size: 10.5px; letter-spacing: 0.13em;
   text-transform: uppercase; color: var(--ink-faint);
   display: flex; align-items: center; gap: 7px;
 }
-.n-stat__val {
+.stat__val {
   margin-top: 9px;
   font-weight: 600;
   font-size: 27px; line-height: 1; letter-spacing: -0.02em;
   color: var(--ink); display: flex; align-items: baseline; gap: 5px;
 }
-.n-stat__unit { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+.stat__unit { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
 
 /* ---- Sky hero ---- */
 .ha-hero--sky {
@@ -198,17 +198,17 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
 .ha-signal i { width: 3px; border-radius: 1px; background: oklch(0.82 0.16 152); display: block; }
 
 /* ---- Detail / Dashboard ---- */
-.n-detail { container-type: inline-size; }
-.n-detail__hero {
+.detail { container-type: inline-size; }
+.detail__hero {
   display: flex; flex-direction: column; gap: 22px;
   padding: 24px; align-items: stretch;
 }
-.n-detail__heroside { flex-shrink: 0; }
-.n-detail__herochart { flex: 1; min-width: 0; }
-.n-detail__grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-.n-detail__gauges { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.detail__heroside { flex-shrink: 0; }
+.detail__herochart { flex: 1; min-width: 0; }
+.detail__grid { display: grid; grid-template-columns: 1fr; gap: 16px; min-width: 0; }
+.detail__gauges { display: grid; grid-template-columns: 1fr; gap: 16px; }
 
-.n-toggle {
+.toggle {
   display: inline-flex; padding: 3px; gap: 2px;
   background: var(--tile); border: 1px solid var(--line); border-radius: 999px;
 
@@ -222,11 +222,11 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
 }
 
 @container (min-width: 680px) {
-  .n-detail__hero { flex-direction: row; align-items: center; padding: 30px 32px; }
-  .n-detail__heroside { width: 240px; }
-  .n-detail__grid { grid-template-columns: 1fr 1fr; gap: 18px; }
-  .n-detail__gauges { grid-template-columns: 1fr 1fr; }
+  .detail__hero { flex-direction: row; align-items: center; padding: 30px 32px; }
+  .detail__heroside { width: 240px; }
+  .detail__grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .detail__gauges { grid-template-columns: 1fr 1fr; }
 }
 @container (min-width: 1000px) {
-  .n-detail__grid { grid-template-columns: 1.2fr 1fr 1fr; }
+  .detail__grid { grid-template-columns: 1.2fr 1fr 1fr; }
 }

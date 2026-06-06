@@ -23,6 +23,7 @@ public interface Assistant {
             "- Do not include any actual weather data in the response.\n" +
             "- Please account for the time of day in your response.\n" +
             "- Do not assume what the weather will be in the future in your response. Only report on what the weather is now \n" +
+            "- Do not include the actual time in your response.\n" +
             "Current date and time in ISO Date Format is: {{time}}" +
             "\n" +
             "Here is the current weather data: \n" +

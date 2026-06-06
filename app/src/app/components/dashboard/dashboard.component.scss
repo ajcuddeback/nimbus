@@ -108,17 +108,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.db-chart-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-  font-size: 11px;
-  color: var(--ink-faint);
-}
 
 /* Metric cards */
-.db-metric { padding: 20px; }
+.db-metric {
+  padding: 20px;
+  min-width: 0;     /* prevent grid item from blowing out its 1fr track */
+  overflow: hidden; /* clip any chart canvas that initialized too wide */
+}
 
 .db-metric__head {
   display: flex;

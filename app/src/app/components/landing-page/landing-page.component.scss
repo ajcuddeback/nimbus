@@ -1,4 +1,4 @@
-.n-screen {
+﻿.screen {
   background: var(--paper);
   color: var(--ink);
   min-height: 100dvh;
@@ -46,11 +46,6 @@
   &:hover { background: var(--tile); color: var(--ink); }
 }
 
-.lp-today-label {
-  font-weight: 600;
-  font-size: 17px;
-  margin-top: 3px;
-}
 
 /* Hero */
 .lp-hero {
@@ -125,7 +120,7 @@
 .lp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .lp-tile { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-height: 132px; }
-.lp-tile .n-stat__val { margin-top: 2px; }
+.lp-tile .stat__val { margin-top: 2px; }
 .lp-meter { margin-top: auto; padding-top: 8px; }
 
 .lp-tile--wind { justify-content: flex-start; }
@@ -135,7 +130,7 @@
 
 /* CTA + footer */
 .lp-cta { display: flex; }
-.lp-cta .n-btn { width: 100%; }
+.lp-cta .btn { width: 100%; }
 .lp-foot { text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
 
 /* Responsive */
@@ -145,7 +140,7 @@
   .lp-hero { padding: 30px 30px 26px; }
   .lp-stats { grid-template-columns: repeat(4, 1fr); }
   .lp-cta { justify-content: flex-start; }
-  .lp-cta .n-btn { width: auto; padding-left: 30px; padding-right: 30px; }
+  .lp-cta .btn { width: auto; padding-left: 30px; padding-right: 30px; }
   .lp-foot { text-align: left; }
 }
 

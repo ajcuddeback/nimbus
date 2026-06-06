@@ -202,20 +202,14 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     return this.weatherUtils.calculateFeelsLikeTemp(tempC, humidity, windMph);
   }
 
-  getPeakTemp(weatherData: WeatherData[]): string {
-    if (!weatherData?.length) {
-      return '--';
-    }
-    const peak = Math.max(...weatherData.map(d => d.temp));
-    return isFinite(peak) ? this.weatherUtils.formatTempShort(peak, this.tempFormat) : '--';
+  getPeakTemp(data: WeatherData[], latest?: WeatherData): string {
+    const f = this.weatherUtils.getPeakTempF(data, latest);
+    return f !== null ? f.toFixed(0) + '°' : '--';
   }
 
-  getMinTemp(weatherData: WeatherData[]): string {
-    if (!weatherData?.length) {
-      return '--';
-    }
-    const min = Math.min(...weatherData.map(d => d.temp));
-    return isFinite(min) ? this.weatherUtils.formatTempShort(min, this.tempFormat) : '--';
+  getMinTemp(data: WeatherData[], latest?: WeatherData): string {
+    const f = this.weatherUtils.getMinTempF(data, latest);
+    return f !== null ? f.toFixed(0) + '°' : '--';
   }
 
   convertPressureToInches(pressure: number): number {

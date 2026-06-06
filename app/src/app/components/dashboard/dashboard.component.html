@@ -1,10 +1,10 @@
-@if (weatherData$ | async; as weatherData) {
+﻿@if (weatherData$ | async; as weatherData) {
   @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
   } @else if (weatherData.current.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
     <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
-      <div class="n-card" style="padding:36px;text-align:center">
-        <div class="n-eyebrow" style="color:var(--c-temp)">Connection error</div>
+      <div class="card" style="padding:36px;text-align:center">
+        <div class="eyebrow" style="color:var(--c-temp)">Connection error</div>
         <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px">Unable to load weather data.</p>
       </div>
     </div>
@@ -15,12 +15,12 @@
     @let chartData = liveMode ? currentData : todayData;
     @let xEveryVal = liveMode ? 6 : 4;
 
-    <div class="db-screen n-detail">
+    <div class="db-screen detail">
 
       <!-- Header -->
       <div class="db-header">
         <div class="db-header__left">
-          <button class="n-btn n-btn--ghost db-back" routerLink="/">
+          <button class="btn btn--ghost db-back" routerLink="/">
             <svg width="14" height="14" viewBox="0 0 16 16">
               <path d="M13 8H4M8 4L4 8l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -32,8 +32,8 @@
           </div>
         </div>
         <div class="db-header__right">
-          <span class="n-pill"><span class="n-live-dot"></span>&nbsp;updated {{ getLastUpdateTime(latest) }}</span>
-          <div class="n-toggle">
+          <span class="pill"><span class="live-dot"></span>&nbsp;Updated {{ getLastUpdateTime(latest) }}</span>
+          <div class="toggle">
             <button [attr.data-active]="liveMode" (click)="setLiveMode(true)">LIVE · MIN</button>
             <button [attr.data-active]="!liveMode" (click)="setLiveMode(false)">TODAY · HR</button>
           </div>
@@ -43,6 +43,7 @@
                 <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
                 <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
                 <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
               </svg>
             } @else {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -55,7 +56,7 @@
 
       <!-- AI Summary strip -->
       <div class="db-summary">
-        <span class="n-eyebrow db-summary__label">
+        <span class="eyebrow db-summary__label">
           <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6z" fill="currentColor"/>
           </svg>
@@ -67,10 +68,10 @@
       <div class="db-body">
 
         <!-- Temperature Hero -->
-        <div class="n-card">
-          <div class="n-detail__hero">
-            <div class="n-detail__heroside">
-              <div class="n-eyebrow" style="color:var(--c-temp)">Temperature</div>
+        <div class="card">
+          <div class="detail__hero">
+            <div class="detail__heroside">
+              <div class="eyebrow" style="color:var(--c-temp)">Temperature</div>
               <div class="db-hero-temp">
                 <span class="db-hero-temp__val">{{ (latest.temp * 9/5 + 32).toFixed(1) }}</span>
                 <span class="db-hero-temp__unit">°F</span>
@@ -82,19 +83,15 @@
                 </div>
                 <div class="db-readout">
                   <span class="db-readout__k">Today high</span>
-                  <span class="db-readout__v" style="color:var(--c-temp)">{{ getPeakTemp(todayData) }} °F</span>
+                  <span class="db-readout__v" style="color:var(--c-temp)">{{ getPeakTemp(todayData, latest) }} °F</span>
                 </div>
                 <div class="db-readout">
                   <span class="db-readout__k">Today low</span>
-                  <span class="db-readout__v">{{ getLowTemp(todayData) }} °F</span>
+                  <span class="db-readout__v">{{ getLowTemp(todayData, latest) }} °F</span>
                 </div>
               </div>
             </div>
-            <div class="n-detail__herochart">
-              <div class="db-chart-meta">
-                <span>{{ liveMode ? 'last readings · minute' : 'midnight → now · hourly' }}</span>
-                <span>peak {{ getPeakTemp(todayData) }}°F</span>
-              </div>
+            <div class="detail__herochart">
               <app-area-chart
                 [values]="getTempValues(chartData)"
                 [labels]="getLabels(chartData)"
@@ -105,11 +102,11 @@
         </div>
 
         <!-- Metric grid -->
-        <div class="n-detail__grid">
-          <div class="n-card db-metric">
+        <div class="detail__grid">
+          <div class="card db-metric">
             <div class="db-metric__head">
               <div>
-                <div class="n-eyebrow" style="color:var(--c-humid)">Humidity</div>
+                <div class="eyebrow" style="color:var(--c-humid)">Humidity</div>
                 <div class="db-metric__val">{{ latest.hum.toFixed(1) }}%</div>
               </div>
               <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
@@ -118,13 +115,13 @@
               [values]="getHumidValues(chartData)"
               [labels]="getLabels(chartData)"
               color="var(--c-humid)" unit="%" [height]="150"
-              [decimals]="0" [xEvery]="xEveryVal" [yTicks]="4"/>
+              [decimals]="0" [xEvery]="xEveryVal" [yTicks]="4" [yMax]="100"/>
           </div>
 
-          <div class="n-card db-metric">
+          <div class="card db-metric">
             <div class="db-metric__head">
               <div>
-                <div class="n-eyebrow" style="color:var(--c-wind)">Wind speed</div>
+                <div class="eyebrow" style="color:var(--c-wind)">Wind speed</div>
                 <div class="db-metric__val">{{ latest.windSpeed.toFixed(2) }} mph</div>
               </div>
               <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
@@ -136,10 +133,10 @@
               [decimals]="1" [xEvery]="xEveryVal" [yTicks]="4" [yMin]="0"/>
           </div>
 
-          <div class="n-card db-metric">
+          <div class="card db-metric">
             <div class="db-metric__head">
               <div>
-                <div class="n-eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
+                <div class="eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
                 <div class="db-metric__val">{{ getRainTotal(todayData).toFixed(2) }} in</div>
               </div>
               <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · total' }}</span>
@@ -153,15 +150,15 @@
         </div>
 
         <!-- Gauges -->
-        <div class="n-detail__gauges">
-          <div class="n-card db-gauge-card">
+        <div class="detail__gauges">
+          <div class="card db-gauge-card">
             <app-nimbus-compass
               [deg]="latest.windDirection"
               [dirName]="getWindDirectionLabel(latest.windDirection)"
               [speed]="latest.windSpeed"
               [size]="150"/>
             <div class="db-gauge-info">
-              <div class="n-eyebrow" style="color:var(--c-wind)">Wind direction</div>
+              <div class="eyebrow" style="color:var(--c-wind)">Wind direction</div>
               <p class="db-gauge-desc">
                 From the <b>{{ getWindDirectionLabel(latest.windDirection) }}</b> ({{ roundDeg(latest.windDirection) }}°)
                 at <b>{{ latest.windSpeed.toFixed(2) }} mph</b>.
@@ -171,14 +168,14 @@
             </div>
           </div>
 
-          <div class="n-card db-gauge-card">
+          <div class="card db-gauge-card">
             <app-pressure-gauge
               [value]="convertPressureToInches(latest.pr)"
               [min]="29.4" [max]="30.4" label="inHg"
               [trend]="getPressureTrend(todayData)"
               [size]="150"/>
             <div class="db-gauge-info">
-              <div class="n-eyebrow" style="color:var(--c-press)">Barometric pressure</div>
+              <div class="eyebrow" style="color:var(--c-press)">Barometric pressure</div>
               <p class="db-gauge-desc">
                 {{ getPressureDescription(convertPressureToInches(latest.pr), getPressureTrend(todayData)) }}
               </p>
@@ -204,7 +201,7 @@
       <p-skeleton width="200px" height="36px" borderRadius="999px"/>
     </div>
     <div class="db-body">
-      <div class="n-card" style="padding:24px">
+      <div class="card" style="padding:24px">
         <p-skeleton width="100%" height="300px"/>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:0">

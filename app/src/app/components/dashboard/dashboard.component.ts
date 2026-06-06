@@ -18,7 +18,7 @@ import { PressureGaugeComponent } from '../shared/pressure-gauge/pressure-gauge.
     AreaChartComponent, SparklineComponent, NimbusCompassComponent, PressureGaugeComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
-  providers: [DatePipe]
+
 })
 export class DashboardComponent implements OnInit {
   weatherData$: Observable<CombinedWeatherData>;
@@ -100,16 +100,14 @@ export class DashboardComponent implements OnInit {
     return (f * 9 / 5 + 32).toFixed(1);
   }
 
-  getPeakTemp(today: WeatherData[]): string {
-    if (!today?.length) return '--';
-    const peak = Math.max(...today.map(d => this.toF(d.temp)));
-    return isFinite(peak) ? peak.toFixed(1) : '--';
+  getPeakTemp(today: WeatherData[], latest?: WeatherData): string {
+    const f = this.weatherUtils.getPeakTempF(today, latest);
+    return f !== null ? f.toFixed(1) : '--';
   }
 
-  getLowTemp(today: WeatherData[]): string {
-    if (!today?.length) return '--';
-    const low = Math.min(...today.map(d => this.toF(d.temp)));
-    return isFinite(low) ? low.toFixed(1) : '--';
+  getLowTemp(today: WeatherData[], latest?: WeatherData): string {
+    const f = this.weatherUtils.getMinTempF(today, latest);
+    return f !== null ? f.toFixed(1) : '--';
   }
 
   convertPressureToInches(pr: number): number { return this.weatherUtils.convertPressureToInches(pr); }

@@ -1,77 +1,104 @@
-import { Component, Input, OnChanges } from '@angular/core';
-
-interface TickMark { x1: number; y1: number; x2: number; y2: number; long: boolean; }
-interface Cardinal { mark: string; x: number; y: number; }
+import { Component, Input, OnChanges, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import type { EChartsOption } from 'echarts';
+import { ChartService } from '../../../services/chart.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-nimbus-compass',
-  template: `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-      <svg [attr.width]="size" [attr.height]="size" [attr.viewBox]="'0 0 ' + size + ' ' + size">
-        <circle [attr.cx]="c" [attr.cy]="c" [attr.r]="r" fill="none" stroke="var(--line)" stroke-width="1.5"/>
-        @for (m of tickMarks; track $index) {
-          <line [attr.x1]="m.x1" [attr.y1]="m.y1" [attr.x2]="m.x2" [attr.y2]="m.y2"
-                stroke="var(--line)" [attr.stroke-width]="m.long ? 1.5 : 1"/>
-        }
-        @for (card of cardinals; track card.mark) {
-          <text [attr.x]="card.x" [attr.y]="card.y" text-anchor="middle"
-                font-family="var(--mono,monospace)" font-size="11"
-                [attr.fill]="card.mark === 'N' ? 'var(--c-temp)' : 'var(--ink-faint)'"
-                [attr.font-weight]="card.mark === 'N' ? 600 : 400">{{ card.mark }}</text>
-        }
-        <line [attr.x1]="tailX" [attr.y1]="tailY" [attr.x2]="tipX" [attr.y2]="tipY"
-              stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
-        <polygon [attr.points]="arrowPoints" fill="var(--accent)"/>
-        <circle [attr.cx]="c" [attr.cy]="c" r="4.5" fill="var(--card)" stroke="var(--accent)" stroke-width="2"/>
-      </svg>
-      @if (!compact) {
-        <div style="text-align:center;line-height:1.25">
-          <div style="font-family:var(--mono,monospace);font-size:18px;color:var(--ink);font-weight:500">
-            {{ speed.toFixed(2) }} <span style="font-size:11px;color:var(--ink-soft)">mph {{ dirName }}</span>
-          </div>
-          @if (gust != null) {
-            <div style="font-family:var(--mono,monospace);font-size:11px;color:var(--ink-faint)">gust {{ gust.toFixed(1) }}</div>
-          }
-        </div>
-      }
-    </div>
-  `
+  imports: [NgxEchartsDirective],
+  templateUrl: './nimbus-compass.component.html',
+  styleUrl: './nimbus-compass.component.scss'
 })
-export class NimbusCompassComponent implements OnChanges {
+export class NimbusCompassComponent implements OnChanges, OnInit {
   @Input() deg = 0;
   @Input() dirName = '';
   @Input() speed = 0;
   @Input() gust?: number;
   @Input() size = 132;
   @Input() compact = false;
+  @Input() showLabels = true;
 
-  c = 66; r = 52;
-  rad = 0;
-  tipX = 0; tipY = 0; tailX = 0; tailY = 0;
-  arrowPoints = '';
-  tickMarks: TickMark[] = [];
-  cardinals: Cardinal[] = [];
+  opts: EChartsOption = {};
 
-  ngOnChanges(): void {
-    this.c = this.size / 2;
-    this.r = this.c - 14;
-    this.rad = ((this.deg - 90) * Math.PI) / 180;
-    this.tipX = this.c + Math.cos(this.rad) * (this.r - 6);
-    this.tipY = this.c + Math.sin(this.rad) * (this.r - 6);
-    this.tailX = this.c - Math.cos(this.rad) * (this.r - 30);
-    this.tailY = this.c - Math.sin(this.rad) * (this.r - 30);
-    const tx = this.tipX, ty = this.tipY, rad = this.rad;
-    this.arrowPoints = `${tx},${ty} ${tx - Math.cos(rad - 0.5) * 11},${ty - Math.sin(rad - 0.5) * 11} ${tx - Math.cos(rad + 0.5) * 11},${ty - Math.sin(rad + 0.5) * 11}`;
-    this.tickMarks = Array.from({ length: 36 }, (_, i) => {
-      const a = (i * 10 - 90) * Math.PI / 180;
-      const long = i % 9 === 0;
-      const r1 = this.r - (long ? 8 : 4);
-      return { x1: this.c + Math.cos(a) * this.r, y1: this.c + Math.sin(a) * this.r, x2: this.c + Math.cos(a) * r1, y2: this.c + Math.sin(a) * r1, long };
-    });
-    this.cardinals = ['N', 'E', 'S', 'W'].map((m, i) => {
-      const a = (i * 90 - 90) * Math.PI / 180;
-      const rr = this.r - 22;
-      return { mark: m, x: this.c + Math.cos(a) * rr, y: this.c + Math.sin(a) * rr + 4 };
-    });
+  private destroyRef = inject(DestroyRef);
+  private chart = inject(ChartService);
+  private theme = inject(ThemeService);
+
+  ngOnInit(): void {
+    this.theme.themeChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.build());
+  }
+
+  ngOnChanges(): void { this.build(); }
+
+  private build(): void {
+    const lineColor   = this.chart.cssToRgb('var(--line)');
+    const accentColor = this.chart.cssToRgb('var(--accent)');
+    const tempColor   = this.chart.cssToRgb('var(--c-temp)');
+    const faintColor  = this.chart.cssToRgb('var(--ink-faint)');
+    const cardColor   = this.chart.cssToRgb('var(--card)');
+    const labelSize   = Math.max(8, Math.round(this.size * 0.08));
+    const dotR        = Math.round(this.size * 0.033);
+
+    this.opts = {
+      backgroundColor: 'transparent',
+      animation: false,
+      graphic: [{
+        type: 'circle',
+        z: 200,
+        left: 'center',
+        top: 'center',
+        shape: { r: dotR },
+        style: { fill: cardColor, stroke: accentColor, lineWidth: 2 }
+      }],
+      series: [{
+        type: 'gauge',
+        silent: true,
+        startAngle: 90,
+        endAngle: -270,
+        min: 0,
+        max: 360,
+        splitNumber: 4,
+        radius: '82%',
+        center: ['50%', '50%'],
+        axisLine: {
+          lineStyle: { width: 1.5, color: [[1, lineColor]] }
+        },
+        splitLine: {
+          length: Math.round(this.size * 0.07),
+          lineStyle: { color: lineColor, width: 1.5 }
+        },
+        axisTick: {
+          splitNumber: 9,
+          length: Math.round(this.size * 0.04),
+          lineStyle: { color: lineColor, width: 1 }
+        },
+        axisLabel: {
+          show: this.showLabels,
+          distance: 14,
+          fontSize: labelSize,
+          fontFamily: 'monospace',
+          color: faintColor,
+          formatter: (val: number) => {
+            if (val === 0)   return '{n|N}';
+            if (val === 90)  return 'E';
+            if (val === 180) return 'S';
+            if (val === 270) return 'W';
+            return '';
+          },
+          rich: { n: { color: tempColor, fontWeight: 600, fontSize: labelSize } }
+        },
+        pointer: {
+          length: '65%',
+          width: Math.max(4, Math.round(this.size * 0.04)),
+          itemStyle: { color: accentColor }
+        },
+        anchor: { show: false },
+        progress: { show: false },
+        detail:   { show: false },
+        data: [{ value: this.deg }]
+      }]
+    } as EChartsOption;
   }
 }

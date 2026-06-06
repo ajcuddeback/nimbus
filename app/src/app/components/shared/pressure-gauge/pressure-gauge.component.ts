@@ -1,25 +1,17 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import type { EChartsOption } from 'echarts';
+import { ChartService } from '../../../services/chart.service';
+import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-pressure-gauge',
-  template: `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
-      <svg [attr.width]="size" [attr.height]="size" [attr.viewBox]="'0 0 ' + size + ' ' + size">
-        <path [attr.d]="trackPath" fill="none" stroke="var(--line)" stroke-width="7" stroke-linecap="round"/>
-        <path [attr.d]="fillPath" fill="none" stroke="var(--c-press)" stroke-width="7" stroke-linecap="round"/>
-        <circle [attr.cx]="handleX" [attr.cy]="handleY" r="6" fill="var(--card)" stroke="var(--c-press)" stroke-width="2.5"/>
-        <text [attr.x]="c" [attr.y]="c + 2" text-anchor="middle" font-family="var(--display,sans-serif)"
-              font-weight="600" font-size="24" fill="var(--ink)">{{ value.toFixed(2) }}</text>
-        <text [attr.x]="c" [attr.y]="c + 20" text-anchor="middle" font-family="var(--mono,monospace)"
-              font-size="10.5" fill="var(--ink-faint)">{{ label }}</text>
-      </svg>
-      @if (trend) {
-        <div style="font-family:var(--mono,monospace);font-size:11px;color:var(--ink-soft)">{{ trend }}</div>
-      }
-    </div>
-  `
+  imports: [NgxEchartsDirective],
+  templateUrl: './pressure-gauge.component.html',
+  styleUrl: './pressure-gauge.component.scss'
 })
-export class PressureGaugeComponent implements OnChanges {
+export class PressureGaugeComponent implements OnChanges, OnInit {
   @Input() value = 29.88;
   @Input() min = 29.4;
   @Input() max = 30.4;
@@ -27,30 +19,70 @@ export class PressureGaugeComponent implements OnChanges {
   @Input() trend?: string;
   @Input() size = 132;
 
-  c = 66; r = 54;
-  trackPath = ''; fillPath = '';
-  handleX = 0; handleY = 0;
+  opts: EChartsOption = {};
 
-  ngOnChanges(): void {
-    this.c = this.size / 2;
-    this.r = this.c - 12;
-    const start = 135, end = 405;
-    const frac = Math.max(0, Math.min(1, (this.value - this.min) / (this.max - this.min)));
-    const angle = start + frac * (end - start);
-    this.trackPath = this.arc(start, end);
-    this.fillPath = this.arc(start, angle);
-    [this.handleX, this.handleY] = this.polar(angle);
+  private destroyRef = inject(DestroyRef);
+  private chart = inject(ChartService);
+  private theme = inject(ThemeService);
+
+  ngOnInit(): void {
+    this.theme.themeChange$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.build());
   }
 
-  private polar(deg: number): [number, number] {
-    const a = (deg - 90) * Math.PI / 180;
-    return [this.c + Math.cos(a) * this.r, this.c + Math.sin(a) * this.r];
-  }
+  ngOnChanges(): void { this.build(); }
 
-  private arc(a0: number, a1: number): string {
-    const [x0, y0] = this.polar(a0);
-    const [x1, y1] = this.polar(a1);
-    const large = a1 - a0 > 180 ? 1 : 0;
-    return `M ${x0},${y0} A ${this.r},${this.r} 0 ${large} 1 ${x1},${y1}`;
+  private build(): void {
+    const pressColor  = this.chart.cssToRgb('var(--c-press)');
+    const lineColor   = this.chart.cssToRgb('var(--line)');
+    const inkColor    = this.chart.cssToRgb('var(--ink)');
+    const faintColor  = this.chart.cssToRgb('var(--ink-faint)');
+    const valFontSize = Math.round(this.size * 0.18);
+    const lblFontSize = Math.round(this.size * 0.08);
+
+    this.opts = {
+      backgroundColor: 'transparent',
+      animation: false,
+      series: [{
+        type: 'gauge',
+        silent: true,
+        startAngle: 225,
+        endAngle: -45,
+        min: this.min,
+        max: this.max,
+        radius: '85%',
+        center: ['50%', '50%'],
+        axisLine: {
+          lineStyle: { width: 7, color: [[1, lineColor]] }
+        },
+        progress: {
+          show: true,
+          width: 7,
+          roundCap: true,
+          itemStyle: { color: pressColor }
+        },
+        pointer:   { show: false },
+        axisTick:  { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: false },
+        detail: {
+          show: true,
+          valueAnimation: false,
+          formatter: (val: number) => val.toFixed(2),
+          fontSize: valFontSize,
+          fontWeight: 600,
+          fontFamily: 'var(--display,sans-serif)',
+          color: inkColor,
+          offsetCenter: [0, '-5%']
+        },
+        title: {
+          show: true,
+          offsetCenter: [0, '26%'],
+          fontSize: lblFontSize,
+          fontFamily: 'var(--mono,monospace)',
+          color: faintColor
+        },
+        data: [{ value: this.value, name: this.label }]
+      }]
+    } as EChartsOption;
   }
 }

@@ -1,0 +1,17 @@
+<div>
+  @if (!marker) {
+    <p-progressbar [value]="pct" [showValue]="false" [color]="gradientColor"
+                   [style]="trackStyle"/>
+  } @else {
+    <div class="meter-track">
+      <div class="meter-marker"
+           [style.left.%]="pct"
+           [style.background]="color"></div>
+    </div>
+  }
+  @if (trackLabels) {
+    <div class="meter-labels">
+      <span>{{ trackLabels[0] }}</span><span>{{ trackLabels[1] }}</span>
+    </div>
+  }
+</div>

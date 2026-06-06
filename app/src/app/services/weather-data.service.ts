@@ -46,7 +46,7 @@ export class WeatherDataService {
 
   getCombinedWeatherData(stationId: string): Observable<CombinedWeatherData> {
     if (!this.combinedWeatherData$.has(stationId)) {
-      const combined$ = timer(0, 60000).pipe(
+      const combined$ = timer(0, 30000).pipe(
         switchMap(() => forkJoin({
           current: this.getCurrentWeatherData(stationId),
           today: this.getTodaysWeatherData(stationId),

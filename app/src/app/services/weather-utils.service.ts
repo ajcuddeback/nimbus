@@ -67,23 +67,19 @@ export class WeatherUtilsService {
     return Math.round(tempC * 10) / 10;
   }
 
-  // Peak/min calculations
-  getPeakTemp(weatherData: WeatherData[], format: 'f' | 'c'): string {
-    if (!weatherData || weatherData.length === 0) return 'Peak Temp not available';
-    const peak = Math.max(...weatherData.map(data => data.temp));
-    if (peak === Number.NEGATIVE_INFINITY || peak === Number.POSITIVE_INFINITY) {
-      return 'Peak Temp not available';
-    }
-    return this.formatTemp(peak, format);
+  // Peak/min calculations — return Fahrenheit value, null when no data
+  getPeakTempF(data: WeatherData[], latest?: WeatherData): number | null {
+    const all = latest ? [...data, latest] : data;
+    if (!all.length) return null;
+    const peak = Math.max(...all.map(d => d.temp * 9 / 5 + 32));
+    return isFinite(peak) ? peak : null;
   }
 
-  getMinTemp(weatherData: WeatherData[], format: 'f' | 'c'): string {
-    if (!weatherData || weatherData.length === 0) return 'Min Temp not available';
-    const min = Math.min(...weatherData.map(data => data.temp));
-    if (min === Number.NEGATIVE_INFINITY || min === Number.POSITIVE_INFINITY) {
-      return 'Min Temp not available';
-    }
-    return this.formatTemp(min, format);
+  getMinTempF(data: WeatherData[], latest?: WeatherData): number | null {
+    const all = latest ? [...data, latest] : data;
+    if (!all.length) return null;
+    const min = Math.min(...all.map(d => d.temp * 9 / 5 + 32));
+    return isFinite(min) ? min : null;
   }
 
   getPeakHumidity(weatherData: WeatherData[]): string {
