@@ -13,9 +13,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -66,6 +65,40 @@ public final class WeatherDataService {
 
         final long firstHourOfDayUtcEpoch = firstHourOfDay.toEpochSecond();
         final long lastHourOfDayUtcEpoch = lastHourOfDay.toEpochSecond();
+
+
+        return mongoTemplate
+                .query(WeatherData.class)
+                .matching(
+                        query(
+                                where("stationId")
+                                        .is(stationId)
+                                        .and("timestamp")
+                                        .gte(firstHourOfDayUtcEpoch)
+                                        .lte(lastHourOfDayUtcEpoch)
+                        )
+                                .with(Sort.by("timestamp").ascending())
+                ).all();
+    }
+
+    public Flux<WeatherData> getWeatherByDay(
+            final String stationId,
+            final String timezone,
+            final String day
+    ) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+
+        final LocalDate localDate = LocalDate.parse(day, formatter);
+        final ZonedDateTime dayTime = ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, ZoneId.of(timezone));
+
+        final ZonedDateTime firstHourOfDay = dayTime.withHour(0).withMinute(0).withSecond(0).withNano(0);
+        final ZonedDateTime lastHourOfDay = dayTime.withHour(23).withMinute(59).withSecond(59).withNano(999_999_999);
+
+        final long firstHourOfDayUtcEpoch = firstHourOfDay.toEpochSecond();
+        final long lastHourOfDayUtcEpoch = lastHourOfDay.toEpochSecond();
+
+        log.info(String.valueOf(firstHourOfDayUtcEpoch));
+        log.info(String.valueOf(lastHourOfDayUtcEpoch));
 
 
         return mongoTemplate

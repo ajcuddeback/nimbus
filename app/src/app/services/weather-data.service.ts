@@ -38,6 +38,13 @@ export class WeatherDataService {
     return this.apiService.get(`${this.backendEndpoint}/weatherData/today`, params);
   }
 
+  getWeatherByDay(stationId: string, day: string): Observable<ApiResponse<WeatherData[]>> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const params = new HttpParams().set('stationId', stationId).set('timezone', timeZone).set('day', day);
+
+    return this.apiService.get(`${this.backendEndpoint}/weatherData`, params);
+  }
+
   getAISummary(stationId: string): Observable<ApiResponse<{ summary: string }>> {
     const params = new HttpParams().set('stationId', stationId);
 

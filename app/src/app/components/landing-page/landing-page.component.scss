@@ -129,8 +129,9 @@
 .lp-wind-dir { font-size: 11px; color: var(--ink-faint); margin-top: 5px; }
 
 /* CTA + footer */
+
 .lp-cta { display: flex; }
-.lp-cta .btn { width: 100%; }
+.lp-cta__container .btn { width: 100%; margin-bottom: 1rem; }
 .lp-foot { text-align: center; font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
 
 /* Responsive */
@@ -139,6 +140,11 @@
   .lp-temp { font-size: 112px; }
   .lp-hero { padding: 30px 30px 26px; }
   .lp-stats { grid-template-columns: repeat(4, 1fr); }
+  .lp-cta__container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .lp-cta { justify-content: flex-start; }
   .lp-cta .btn { width: auto; padding-left: 30px; padding-right: 30px; }
   .lp-foot { text-align: left; }

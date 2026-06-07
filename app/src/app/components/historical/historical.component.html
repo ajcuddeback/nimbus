@@ -1,1 +1,8 @@
-<p>Coming Soon...</p>
+<div class="db-date-picker">
+  <button (click)="changeDate(-1)">&lt;</button>
+  <p>{{ date | date:'longDate' }}</p>
+  <p>{{ date | date:'longDate' }}</p>
+  @if (date.getDate() !== today.getDate() || date.getMonth() !== today.getMonth() || date.getFullYear() !== today.getFullYear()) {
+    <button (click)="changeDate(1)">&gt;</button>
+  }
+</div>

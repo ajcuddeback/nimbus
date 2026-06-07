@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/weatherData")
 public class WeatherDataController {
@@ -27,11 +28,12 @@ public class WeatherDataController {
     }
 
     @GetMapping
-    public Mono<Page<WeatherData>> getWeatherDataByLocation(
+    public Flux<WeatherData> getWeatherByDate(
             @RequestParam String stationId,
-            Pageable pageable
+            @RequestParam String timezone,
+            @RequestParam String day
     ) {
-        return weatherDataService.getWeatherDataByLocation(stationId, pageable);
+        return weatherDataService.getWeatherByDay(stationId, timezone, day);
     }
 
     @GetMapping("/current")

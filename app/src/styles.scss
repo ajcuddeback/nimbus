@@ -96,12 +96,11 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
   transition: transform .15s ease, opacity .15s ease;
 
   &:hover { transform: translateY(-1px); opacity: .92; }
-}
-
-.btn--ghost {
-  background: transparent; color: var(--ink);
-  border: 1px solid var(--line);
-  &:hover { background: var(--tile); }
+  &--ghost {
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--line);
+    &:hover { background: var(--tile); }
+  }
 }
 
 .stat__label {

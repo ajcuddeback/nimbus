@@ -47,8 +47,8 @@
   border-bottom: 1px solid var(--line);
   display: flex;
   gap: 12px;
-  align-items: flex-start;
   background: color-mix(in oklch, var(--tile) 45%, transparent);
+  align-items: center;
 }
 
 .db-summary__label {
