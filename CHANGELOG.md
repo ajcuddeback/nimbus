@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/ajcuddeback/nimbus/compare/v1.6.0...v1.7.0) (2026-06-10)
+
+
+### Features
+
+* Consolidation of code, refactor, and moving charts to use echarts for easier maintainability ([5b50ce6](https://github.com/ajcuddeback/nimbus/commit/5b50ce6226eadaea91eb9a3557154d4d27a3b01f))
+
+
+### Bug Fixes
+
+* Quick fix for rain acculation ([d075c28](https://github.com/ajcuddeback/nimbus/commit/d075c28cd2293d095e6a35f5a13167ad22767249))
+
 ## [1.6.0](https://github.com/ajcuddeback/nimbus/compare/v1.5.0...v1.6.0) (2026-06-05)
 
 
