@@ -7,7 +7,9 @@
     <ng-container *ngTemplateOutlet="emptyState" />
   } @else {
     @let latest = weatherData.current.data[weatherData.current.data.length - 1];
+    @let currentData = weatherData.current.data;
     @let todayData = weatherData.today.data;
+    @let rainTotal = getTodayRainTotal(todayData, currentData);
     @let sky = computeSkyTheme(latest);
 
     <div class="screen lp-wrap">
@@ -265,10 +267,10 @@
 
           <div class="card lp-tile">
             <div class="stat__label">Rain today</div>
-            <div class="stat__val">{{ getRainTotal(todayData).toFixed(2) }}<span class="stat__unit">in</span></div>
+            <div class="stat__val">{{ rainTotal.toFixed(2) }}<span class="stat__unit">in</span></div>
             <div class="lp-meter">
-              <app-linear-meter [value]="getRainTotal(todayData)" [min]="0" [max]="1"
-                color="var(--c-rain)" [trackLabels]="['0','1 in']"/>
+              <app-linear-meter [value]="rainTotal" [min]="0" [max]="getRainMeterMax(rainTotal)"
+                color="var(--c-rain)" [trackLabels]="['0', getRainMeterMax(rainTotal) + ' in']"/>
             </div>
           </div>
         </div>

@@ -224,6 +224,14 @@ export class LandingPageComponent implements OnInit, OnDestroy {
     return this.weatherUtils.getRainTotal(weatherData);
   }
 
+  getTodayRainTotal(today: WeatherData[], current: WeatherData[]): number {
+    return Math.round((this.weatherUtils.getRainTotal(today) + this.weatherUtils.getRainTotal(current)) * 100) / 100;
+  }
+
+  getRainMeterMax(total: number): number {
+    return total <= 1 ? 1 : Math.ceil(total);
+  }
+
   tempInF(latest: WeatherData): string {
     const f = latest.temp * 9/5 + 32;
     return f.toFixed(0);

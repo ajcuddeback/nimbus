@@ -12,7 +12,8 @@
     @let latest = weatherData.current.data[weatherData.current.data.length - 1];
     @let currentData = weatherData.current.data;
     @let todayData = weatherData.today.data;
-    @let chartData = liveMode ? currentData : todayData;
+    @let chartData = liveMode ? currentData : getTodayChartData(todayData, currentData);
+    @let todayTotal = getTodayChartData(todayData, currentData);
     @let xEveryVal = liveMode ? 6 : 4;
 
     <div class="db-screen detail">
@@ -137,7 +138,7 @@
             <div class="db-metric__head">
               <div>
                 <div class="eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
-                <div class="db-metric__val">{{ getRainTotal(todayData).toFixed(2) }} in</div>
+                <div class="db-metric__val">{{ getRainTotal(todayTotal).toFixed(2) }} in</div>
               </div>
               <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · total' }}</span>
             </div>

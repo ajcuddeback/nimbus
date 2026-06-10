@@ -63,6 +63,13 @@ export class DashboardComponent implements OnInit {
     return s.map(d => { acc += this.toInches(d.rainfall); return +acc.toFixed(3); });
   }
 
+  getTodayChartData(today: WeatherData[], current: WeatherData[]): WeatherData[] {
+    if (!current.length) return today;
+    const currentHourRainfall = current.reduce((sum, d) => sum + d.rainfall, 0);
+    const latest = current[current.length - 1];
+    return [...today, { ...latest, rainfall: currentHourRainfall }];
+  }
+
   getLabels(data: WeatherData[]): string[] { return this.sorted(data).map(d => this.label(d.timestamp)); }
 
   getLastUpdateTime(latest: WeatherData): string {
