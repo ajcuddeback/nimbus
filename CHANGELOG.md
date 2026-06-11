@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/ajcuddeback/nimbus/compare/v1.7.0...v1.8.0) (2026-06-11)
+
+
+### Features
+
+* Multiple fixes w/ moon and refactor for Angular best practices ([843d3c7](https://github.com/ajcuddeback/nimbus/commit/843d3c71cde88602686b88353f592d6244be7fe9))
+
 ## [1.7.0](https://github.com/ajcuddeback/nimbus/compare/v1.6.0...v1.7.0) (2026-06-10)
 
 
