@@ -1,4 +1,4 @@
-﻿@if (weatherData$ | async; as weatherData) {
+@if (weatherData(); as weatherData) {
   @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
   } @else if (weatherData.current.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
@@ -8,13 +8,16 @@
         <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px">Unable to load weather data.</p>
       </div>
     </div>
+  } @else if (!weatherData.current.data.length) {
+    <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
+      <div class="card" style="padding:36px;text-align:center">
+        <div class="eyebrow">Waiting for data</div>
+        <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px">No readings received yet from the station.</p>
+      </div>
+    </div>
   } @else {
     @let latest = weatherData.current.data[weatherData.current.data.length - 1];
-    @let currentData = weatherData.current.data;
     @let todayData = weatherData.today.data;
-    @let chartData = liveMode ? currentData : getTodayChartData(todayData, currentData);
-    @let todayTotal = getTodayChartData(todayData, currentData);
-    @let xEveryVal = liveMode ? 6 : 4;
 
     <div class="db-screen detail">
 
@@ -35,8 +38,8 @@
         <div class="db-header__right">
           <span class="pill"><span class="live-dot"></span>&nbsp;Updated {{ getLastUpdateTime(latest) }}</span>
           <div class="toggle">
-            <button [attr.data-active]="liveMode" (click)="setLiveMode(true)">LIVE · MIN</button>
-            <button [attr.data-active]="!liveMode" (click)="setLiveMode(false)">TODAY · HR</button>
+            <button [attr.data-active]="liveMode()" (click)="setLiveMode(true)">LIVE · MIN</button>
+            <button [attr.data-active]="!liveMode()" (click)="setLiveMode(false)">TODAY · HR</button>
           </div>
           <button class="db-theme-btn" (click)="toggleTheme()" [title]="isDark ? 'Light mode' : 'Dark mode'">
             @if (isDark) {
@@ -74,7 +77,7 @@
             <div class="detail__heroside">
               <div class="eyebrow" style="color:var(--c-temp)">Temperature</div>
               <div class="db-hero-temp">
-                <span class="db-hero-temp__val">{{ (latest.temp * 9/5 + 32).toFixed(1) }}</span>
+                <span class="db-hero-temp__val">{{ formatTempF(latest.temp) }}</span>
                 <span class="db-hero-temp__unit">°F</span>
               </div>
               <div class="db-readouts">
@@ -94,10 +97,10 @@
             </div>
             <div class="detail__herochart">
               <app-area-chart
-                [values]="getTempValues(chartData)"
-                [labels]="getLabels(chartData)"
+                [values]="temperatureValues()"
+                [labels]="chartLabels()"
                 color="var(--c-temp)" unit="°" [height]="236"
-                [decimals]="1" [xEvery]="xEveryVal" [yTicks]="5"/>
+                [decimals]="1" [xEvery]="xLabelEvery()" [yTicks]="5"/>
             </div>
           </div>
         </div>
@@ -110,13 +113,13 @@
                 <div class="eyebrow" style="color:var(--c-humid)">Humidity</div>
                 <div class="db-metric__val">{{ latest.hum.toFixed(1) }}%</div>
               </div>
-              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
+              <span class="db-metric__note">{{ chartModeNote() }}</span>
             </div>
             <app-area-chart
-              [values]="getHumidValues(chartData)"
-              [labels]="getLabels(chartData)"
+              [values]="humidityValues()"
+              [labels]="chartLabels()"
               color="var(--c-humid)" unit="%" [height]="150"
-              [decimals]="0" [xEvery]="xEveryVal" [yTicks]="4" [yMax]="100"/>
+              [decimals]="0" [xEvery]="xLabelEvery()" [yTicks]="4" [yMax]="100"/>
           </div>
 
           <div class="card db-metric">
@@ -125,28 +128,28 @@
                 <div class="eyebrow" style="color:var(--c-wind)">Wind speed</div>
                 <div class="db-metric__val">{{ latest.windSpeed.toFixed(2) }} mph</div>
               </div>
-              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · hourly' }}</span>
+              <span class="db-metric__note">{{ chartModeNote() }}</span>
             </div>
             <app-area-chart
-              [values]="getWindValues(chartData)"
-              [labels]="getLabels(chartData)"
+              [values]="windSpeedValues()"
+              [labels]="chartLabels()"
               color="var(--c-wind)" unit="" [height]="150"
-              [decimals]="1" [xEvery]="xEveryVal" [yTicks]="4" [yMin]="0"/>
+              [decimals]="1" [xEvery]="xLabelEvery()" [yTicks]="4" [yMin]="0"/>
           </div>
 
           <div class="card db-metric">
             <div class="db-metric__head">
               <div>
                 <div class="eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
-                <div class="db-metric__val">{{ getRainTotal(todayTotal).toFixed(2) }} in</div>
+                <div class="db-metric__val">{{ rainTotalToday().toFixed(2) }} in</div>
               </div>
-              <span class="db-metric__note">{{ liveMode ? 'live · minute' : 'today · total' }}</span>
+              <span class="db-metric__note">{{ rainModeNote() }}</span>
             </div>
             <app-area-chart
-              [values]="getRainCumulativeValues(chartData)"
-              [labels]="getLabels(chartData)"
+              [values]="rainCumulativeValues()"
+              [labels]="chartLabels()"
               color="var(--c-rain)" unit='"' [height]="150"
-              [decimals]="2" [xEvery]="xEveryVal" [yTicks]="4" [yMin]="0"/>
+              [decimals]="2" [xEvery]="xLabelEvery()" [yTicks]="4" [yMin]="0"/>
           </div>
         </div>
 
@@ -165,7 +168,7 @@
                 at <b>{{ latest.windSpeed.toFixed(2) }} mph</b>.
                 {{ getWindDescription(latest.windSpeed, getWindDirectionLabel(latest.windDirection)) }}
               </p>
-              <app-sparkline [values]="getWindValues(todayData)" color="var(--c-wind)" [width]="210" [height]="30" [fluid]="true"/>
+              <app-sparkline [values]="todayWindValues()" color="var(--c-wind)" [width]="210" [height]="30" [fluid]="true"/>
             </div>
           </div>
 
@@ -173,14 +176,14 @@
             <app-pressure-gauge
               [value]="convertPressureToInches(latest.pr)"
               [min]="29.4" [max]="30.4" label="inHg"
-              [trend]="getPressureTrend(todayData)"
+              [trend]="pressureTrend()"
               [size]="150"/>
             <div class="db-gauge-info">
               <div class="eyebrow" style="color:var(--c-press)">Barometric pressure</div>
               <p class="db-gauge-desc">
-                {{ getPressureDescription(convertPressureToInches(latest.pr), getPressureTrend(todayData)) }}
+                {{ getPressureDescription(convertPressureToInches(latest.pr), pressureTrend()) }}
               </p>
-              <app-sparkline [values]="getPressureValues(todayData)" color="var(--c-press)" [width]="210" [height]="30" [fluid]="true"/>
+              <app-sparkline [values]="todayPressureValues()" color="var(--c-press)" [width]="210" [height]="30" [fluid]="true"/>
             </div>
           </div>
         </div>

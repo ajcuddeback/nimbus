@@ -1,0 +1,49 @@
+<svg
+  class="moon"
+  [attr.width]="size()"
+  [attr.height]="size()"
+  [style.--moon-glow-strength]="0.2 + illuminatedFraction() * 0.35"
+  viewBox="0 0 100 100"
+  role="img"
+  [attr.aria-label]="phaseName()">
+  <title>{{ phaseName() }}</title>
+  <defs>
+    <radialGradient [attr.id]="surfaceGradientId" cx="38%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
+      <stop offset="62%" stop-color="oklch(0.92 0.04 88)"/>
+      <stop offset="100%" stop-color="oklch(0.83 0.055 78)"/>
+    </radialGradient>
+    <clipPath [attr.id]="discClipId">
+      <circle cx="50" cy="50" r="44"/>
+    </clipPath>
+    <filter [attr.id]="terminatorBlurId">
+      <feGaussianBlur stdDeviation="1.4"/>
+    </filter>
+  </defs>
+
+  <g [attr.clip-path]="'url(#' + discClipId + ')'">
+    <!-- Lunar surface -->
+    <circle cx="50" cy="50" r="44" [attr.fill]="'url(#' + surfaceGradientId + ')'"/>
+
+    <!-- Maria: the large, darker basalt plains -->
+    <ellipse cx="36" cy="33" rx="13" ry="10" fill="oklch(0.80 0.045 80)" opacity="0.55" transform="rotate(-18 36 33)"/>
+    <ellipse cx="58" cy="29" rx="9" ry="7" fill="oklch(0.80 0.045 80)" opacity="0.45" transform="rotate(12 58 29)"/>
+    <ellipse cx="62" cy="48" rx="11" ry="8" fill="oklch(0.79 0.045 80)" opacity="0.5" transform="rotate(24 62 48)"/>
+    <ellipse cx="40" cy="56" rx="8" ry="6" fill="oklch(0.80 0.045 80)" opacity="0.4"/>
+
+    <!-- Craters: a darker rim circle with a lighter floor offset inside -->
+    <circle cx="30" cy="64" r="4.5" fill="oklch(0.76 0.05 78)" opacity="0.6"/>
+    <circle cx="29.2" cy="63.2" r="3.2" fill="oklch(0.88 0.04 85)" opacity="0.7"/>
+    <circle cx="52" cy="70" r="3" fill="oklch(0.76 0.05 78)" opacity="0.55"/>
+    <circle cx="51.4" cy="69.4" r="2" fill="oklch(0.89 0.04 85)" opacity="0.65"/>
+    <circle cx="70" cy="63" r="2.4" fill="oklch(0.78 0.05 78)" opacity="0.5"/>
+    <circle cx="22" cy="42" r="2.2" fill="oklch(0.78 0.05 78)" opacity="0.45"/>
+    <circle cx="46" cy="17" r="2.6" fill="oklch(0.78 0.05 78)" opacity="0.45"/>
+
+    <!-- Limb darkening at the edge of the disc -->
+    <circle cx="50" cy="50" r="43.2" fill="none" stroke="oklch(0.70 0.05 75 / .45)" stroke-width="1.6"/>
+
+    <!-- Night side: slightly translucent so a hint of earthshine remains -->
+    <path [attr.d]="shadowPath()" fill="oklch(0.17 0.04 268)" opacity="0.93" [attr.filter]="'url(#' + terminatorBlurId + ')'"/>
+  </g>
+</svg>

@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { AsyncPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ThemeService } from '../../services/theme.service';
-import { Observable } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { SkeletonModule } from 'primeng/skeleton';
-import { CombinedWeatherData, WeatherDataService } from '../../services/weather-data.service';
+import { ThemeService } from '../../services/theme.service';
+import { WeatherDataService } from '../../services/weather-data.service';
 import { WeatherUtilsService } from '../../services/weather-utils.service';
 import { WeatherData } from '../../models/weather-data.interface';
 import { AreaChartComponent } from '../shared/area-chart/area-chart.component';
@@ -12,139 +12,233 @@ import { SparklineComponent } from '../shared/sparkline/sparkline.component';
 import { NimbusCompassComponent } from '../shared/nimbus-compass/nimbus-compass.component';
 import { PressureGaugeComponent } from '../shared/pressure-gauge/pressure-gauge.component';
 
+// Hardcoded for now: a station picker is planned once the API exposes a station list.
+const STATION_ID = '80bb40b5fce97afec61866080fa08e01';
+
+function celsiusToFahrenheit(tempC: number): number {
+  return tempC * 9 / 5 + 32;
+}
+
+function hectopascalsToInchesOfMercury(pressureHpa: number): number {
+  return +(pressureHpa * 0.02953).toFixed(3);
+}
+
+function millimetersToInches(millimeters: number): number {
+  return +(millimeters / 25.4).toFixed(3);
+}
+
+function sortByTimestamp(readings: WeatherData[]): WeatherData[] {
+  return [...readings].sort((first, second) => first.timestamp - second.timestamp);
+}
+
 @Component({
   selector: 'app-dashboard',
-  imports: [AsyncPipe, NgTemplateOutlet, SkeletonModule, RouterLink,
+  imports: [NgTemplateOutlet, SkeletonModule, RouterLink,
     AreaChartComponent, SparklineComponent, NimbusCompassComponent, PressureGaugeComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
-
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent implements OnInit {
-  weatherData$: Observable<CombinedWeatherData>;
-  liveMode = false;
+export class DashboardComponent {
+  private readonly weatherDataService = inject(WeatherDataService);
+  private readonly weatherUtils = inject(WeatherUtilsService);
+  private readonly datePipe = inject(DatePipe);
+  private readonly themeService = inject(ThemeService);
 
-  get isDark(): boolean { return this.theme.isDark; }
-  toggleTheme(): void { this.theme.toggle(); }
+  protected readonly weatherData = toSignal(this.weatherDataService.getCombinedWeatherData(STATION_ID));
+  protected readonly liveMode = signal(false);
 
-  constructor(
-    private weatherDataService: WeatherDataService,
-    private weatherUtils: WeatherUtilsService,
-    private datePipe: DatePipe,
-    private theme: ThemeService
-  ) {}
+  /** Current and today readings, available only once both requests succeed. */
+  private readonly loadedReadings = computed(() => {
+    const data = this.weatherData();
+    if (!data || data.current.state !== 'success' || data.today.state !== 'success') {
+      return null;
+    }
+    return { current: data.current.data, today: data.today.data };
+  });
 
-  ngOnInit(): void {
-    this.weatherData$ = this.weatherDataService.getCombinedWeatherData('80bb40b5fce97afec61866080fa08e01');
-  }
+  /**
+   * Today's hourly readings plus a synthetic reading for the in-progress
+   * hour, whose rainfall is the rain seen since the last hourly reading.
+   */
+  private readonly todayWithCurrentHour = computed<WeatherData[]>(() => {
+    const loaded = this.loadedReadings();
+    if (!loaded) {
+      return [];
+    }
+    if (!loaded.current.length) {
+      return loaded.today;
+    }
+    const currentHourRainfall = this.weatherUtils.getLiveRainfallMmSinceLastHourly(loaded.today, loaded.current);
+    const latest = loaded.current[loaded.current.length - 1];
+    return [...loaded.today, { ...latest, rainfall: currentHourRainfall }];
+  });
 
-  setLiveMode(live: boolean): void { this.liveMode = live; }
+  /** The readings driving the charts, per the LIVE/TODAY toggle. */
+  private readonly chartReadings = computed<WeatherData[]>(() => {
+    const loaded = this.loadedReadings();
+    if (!loaded) {
+      return [];
+    }
+    return sortByTimestamp(this.liveMode() ? loaded.current : this.todayWithCurrentHour());
+  });
 
-  private toF(tempC: number): number { return tempC * 9 / 5 + 32; }
-  private toInHg(hPa: number): number { return +(hPa * 0.02953).toFixed(3); }
-  private toInches(mm: number): number { return +(mm / 25.4).toFixed(3); }
+  protected readonly chartLabels = computed(() =>
+    this.chartReadings().map(reading => this.formatTimeLabel(reading.timestamp))
+  );
 
-  private label(ts: number): string {
-    return this.datePipe.transform(new Date(ts * 1000), 'h:mm a') ?? '';
-  }
+  protected readonly temperatureValues = computed(() =>
+    this.chartReadings().map(reading => +celsiusToFahrenheit(reading.temp).toFixed(1))
+  );
 
-  private sorted(data: WeatherData[]): WeatherData[] {
-    return [...data].sort((a, b) => a.timestamp - b.timestamp);
-  }
+  protected readonly humidityValues = computed(() =>
+    this.chartReadings().map(reading => reading.hum)
+  );
 
-  getTempValues(data: WeatherData[]): number[] { return this.sorted(data).map(d => +this.toF(d.temp).toFixed(1)); }
-  getHumidValues(data: WeatherData[]): number[] { return this.sorted(data).map(d => d.hum); }
-  getWindValues(data: WeatherData[]): number[] { return this.sorted(data).map(d => d.windSpeed); }
-  getPressureValues(data: WeatherData[]): number[] { return this.sorted(data).map(d => this.toInHg(d.pr)); }
+  protected readonly windSpeedValues = computed(() =>
+    this.chartReadings().map(reading => reading.windSpeed)
+  );
 
-  getRainCumulativeValues(data: WeatherData[]): number[] {
-    const s = this.sorted(data);
-    let acc = 0;
-    return s.map(d => { acc += this.toInches(d.rainfall); return +acc.toFixed(3); });
-  }
+  protected readonly rainCumulativeValues = computed(() => {
+    let runningTotalInches = 0;
+    return this.chartReadings().map(reading => {
+      runningTotalInches += millimetersToInches(reading.rainfall);
+      return +runningTotalInches.toFixed(3);
+    });
+  });
 
-  getTodayChartData(today: WeatherData[], current: WeatherData[]): WeatherData[] {
-    if (!current.length) return today;
-    const currentHourRainfall = current.reduce((sum, d) => sum + d.rainfall, 0);
-    const latest = current[current.length - 1];
-    return [...today, { ...latest, rainfall: currentHourRainfall }];
-  }
+  protected readonly rainTotalToday = computed(() =>
+    this.weatherUtils.getRainTotal(this.todayWithCurrentHour())
+  );
 
-  getLabels(data: WeatherData[]): string[] { return this.sorted(data).map(d => this.label(d.timestamp)); }
+  /** How many x-axis labels to skip between ticks; minute data needs more thinning. */
+  protected readonly xLabelEvery = computed(() => this.liveMode() ? 6 : 4);
 
-  getLastUpdateTime(latest: WeatherData): string {
-    if (!latest?.timestamp) return '';
-    return this.datePipe.transform(new Date(latest.timestamp * 1000), 'h:mm a') ?? '';
-  }
+  protected readonly chartModeNote = computed(() => this.liveMode() ? 'live · minute' : 'today · hourly');
 
-  getConditionLabel(latest: WeatherData): string {
-    const mm = latest?.rainfall ?? 0;
-    if (mm > 2) return 'Hot · Storm';
-    if (mm > 0.3) return 'Rain';
-    const f = this.toF(latest.temp);
-    if (f >= 90) return 'Hot · Clear';
-    if (f >= 80) return 'Warm · Clear';
-    return 'Clear';
-  }
+  protected readonly rainModeNote = computed(() => this.liveMode() ? 'live · minute' : 'today · total');
 
-  getPressureTrend(today: WeatherData[]): string {
-    if (today.length < 4) return '';
-    const sorted = this.sorted(today);
-    const recent = sorted.slice(-1)[0].pr;
-    const earlier = sorted[Math.max(0, sorted.length - 4)].pr;
-    const delta = recent - earlier;
-    if (delta < -0.5) return '↓ falling';
-    if (delta > 0.5) return '↑ rising';
+  protected readonly pressureTrend = computed(() => {
+    const loaded = this.loadedReadings();
+    if (!loaded || loaded.today.length < 4) {
+      return '';
+    }
+    const sorted = sortByTimestamp(loaded.today);
+    const recentPressure = sorted[sorted.length - 1].pr;
+    const earlierPressure = sorted[Math.max(0, sorted.length - 4)].pr;
+    const pressureDelta = recentPressure - earlierPressure;
+    if (pressureDelta < -0.5) {
+      return '↓ falling';
+    }
+    if (pressureDelta > 0.5) {
+      return '↑ rising';
+    }
     return '→ steady';
+  });
+
+  /** Today's wind readings for the compass card's sparkline. */
+  protected readonly todayWindValues = computed(() =>
+    sortByTimestamp(this.loadedReadings()?.today ?? []).map(reading => reading.windSpeed)
+  );
+
+  /** Today's pressure readings for the gauge card's sparkline. */
+  protected readonly todayPressureValues = computed(() =>
+    sortByTimestamp(this.loadedReadings()?.today ?? []).map(reading => hectopascalsToInchesOfMercury(reading.pr))
+  );
+
+  protected get isDark(): boolean {
+    return this.themeService.isDark;
   }
 
-  formatTempShort(tempC: number): string {
-    return this.weatherUtils.formatTempShort(tempC, 'f');
+  protected toggleTheme(): void {
+    this.themeService.toggle();
   }
 
-  getFeelsLike(tempC: number, hum: number, wind: number): string {
-    const f = this.weatherUtils.calculateFeelsLikeTemp(tempC, hum, wind);
-    return (f * 9 / 5 + 32).toFixed(1);
+  protected setLiveMode(live: boolean): void {
+    this.liveMode.set(live);
   }
 
-  getPeakTemp(today: WeatherData[], latest?: WeatherData): string {
-    const f = this.weatherUtils.getPeakTempF(today, latest);
-    return f !== null ? f.toFixed(1) : '--';
+  private formatTimeLabel(timestamp: number): string {
+    return this.datePipe.transform(new Date(timestamp * 1000), 'h:mm a') ?? '';
   }
 
-  getLowTemp(today: WeatherData[], latest?: WeatherData): string {
-    const f = this.weatherUtils.getMinTempF(today, latest);
-    return f !== null ? f.toFixed(1) : '--';
+  protected getLastUpdateTime(latest: WeatherData): string {
+    if (!latest?.timestamp) {
+      return '';
+    }
+    return this.formatTimeLabel(latest.timestamp);
   }
 
-  convertPressureToInches(pr: number): number { return this.weatherUtils.convertPressureToInches(pr); }
-  getWindDirectionLabel(deg: number): string { return this.weatherUtils.getWindDirectionLabel(deg); }
-  getRainTotal(data: WeatherData[]): number { return this.weatherUtils.getRainTotal(data); }
-  roundDeg(deg: number): number { return Math.round(deg); }
-
-  getWindDescription(speed: number, dirName: string): string {
-    if (speed < 0.5) return `Calm — barely any movement.`;
-    if (speed < 3) return `Light breeze from the ${dirName}. Pleasant conditions.`;
-    if (speed < 8) return `Moderate breeze from the ${dirName}. Leaves and small branches moving.`;
-    if (speed < 15) return `Fresh breeze from the ${dirName}. Noticeable wind, small trees swaying.`;
-    if (speed < 25) return `Strong winds from the ${dirName}. Difficult to walk against.`;
-    return `Very strong winds from the ${dirName}. Exercise caution outdoors.`;
+  protected formatTempF(tempC: number): string {
+    return celsiusToFahrenheit(tempC).toFixed(1);
   }
 
-  getPressureDescription(value: number, trend: string): string {
-    const v = value.toFixed(2);
+  protected getFeelsLike(tempC: number, humidity: number, windMph: number): string {
+    const feelsLikeC = this.weatherUtils.calculateFeelsLikeTemp(tempC, humidity, windMph);
+    return celsiusToFahrenheit(feelsLikeC).toFixed(1);
+  }
+
+  protected getPeakTemp(today: WeatherData[], latest?: WeatherData): string {
+    const fahrenheit = this.weatherUtils.getPeakTempF(today, latest);
+    return fahrenheit !== null ? fahrenheit.toFixed(1) : '--';
+  }
+
+  protected getLowTemp(today: WeatherData[], latest?: WeatherData): string {
+    const fahrenheit = this.weatherUtils.getMinTempF(today, latest);
+    return fahrenheit !== null ? fahrenheit.toFixed(1) : '--';
+  }
+
+  protected convertPressureToInches(pressure: number): number {
+    return this.weatherUtils.convertPressureToInches(pressure);
+  }
+
+  protected getWindDirectionLabel(degrees: number): string {
+    return this.weatherUtils.getWindDirectionLabel(degrees);
+  }
+
+  protected roundDeg(degrees: number): number {
+    return Math.round(degrees);
+  }
+
+  protected getWindDescription(speedMph: number, directionName: string): string {
+    if (speedMph < 0.5) {
+      return `Calm — barely any movement.`;
+    }
+    if (speedMph < 3) {
+      return `Light breeze from the ${directionName}. Pleasant conditions.`;
+    }
+    if (speedMph < 8) {
+      return `Moderate breeze from the ${directionName}. Leaves and small branches moving.`;
+    }
+    if (speedMph < 15) {
+      return `Fresh breeze from the ${directionName}. Noticeable wind, small trees swaying.`;
+    }
+    if (speedMph < 25) {
+      return `Strong winds from the ${directionName}. Difficult to walk against.`;
+    }
+    return `Very strong winds from the ${directionName}. Exercise caution outdoors.`;
+  }
+
+  protected getPressureDescription(valueInHg: number, trend: string): string {
+    const formattedValue = valueInHg.toFixed(2);
     if (!trend || trend.includes('steady')) {
-      if (value > 30.1) return `${v} inHg — high pressure holding. Fair, stable weather expected.`;
-      if (value < 29.7) return `${v} inHg — low pressure persisting. Unsettled conditions likely.`;
-      return `${v} inHg — pressure steady. Conditions unlikely to change soon.`;
+      if (valueInHg > 30.1) {
+        return `${formattedValue} inHg — high pressure holding. Fair, stable weather expected.`;
+      }
+      if (valueInHg < 29.7) {
+        return `${formattedValue} inHg — low pressure persisting. Unsettled conditions likely.`;
+      }
+      return `${formattedValue} inHg — pressure steady. Conditions unlikely to change soon.`;
     }
     if (trend.includes('falling')) {
-      if (value < 29.7) return `${v} inHg and falling rapidly — storm or rain likely approaching.`;
-      return `${v} inHg and easing — a gradual drop often nudges toward unsettled air ahead.`;
+      if (valueInHg < 29.7) {
+        return `${formattedValue} inHg and falling rapidly — storm or rain likely approaching.`;
+      }
+      return `${formattedValue} inHg and easing — a gradual drop often nudges toward unsettled air ahead.`;
     }
     if (trend.includes('rising')) {
-      return `${v} inHg and rising — improving conditions likely on the way.`;
+      return `${formattedValue} inHg and rising — improving conditions likely on the way.`;
     }
-    return `${v} inHg.`;
+    return `${formattedValue} inHg.`;
   }
 }

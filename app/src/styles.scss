@@ -142,14 +142,27 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
   50%      { opacity: .95; transform: scale(1); }
 }
 .ha-glyph { position: absolute; transform: translate(-50%, -50%); }
-.ha-sun { border-radius: 50%; }
-.ha-moon { filter: drop-shadow(0 0 14px oklch(0.90 0.07 80 / .45)); }
+.ha-sun {
+  border-radius: 50%;
+  animation: ha-sun-breathe 7s ease-in-out infinite;
+}
+@keyframes ha-sun-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.045); }
+}
 .ha-clouds { position: absolute; inset: 0; overflow: hidden; }
 .ha-cloud {
   position: absolute; width: 124px; height: 38px; border-radius: 999px;
   background: var(--cl, oklch(0.88 0.012 250));
   transform-origin: left center;
+  /* The per-cloud size comes in as --cloud-scale; using the standalone `scale`
+     property keeps it independent of the drift animation's transform. */
+  scale: var(--cloud-scale, 1);
+  animation: ha-cloud-drift 44s ease-in-out infinite alternate;
   filter: drop-shadow(0 6px 10px oklch(0 0 0 / .12));
+
+  &:nth-child(2) { animation-duration: 58s; animation-direction: alternate-reverse; }
+  &:nth-child(3) { animation-duration: 50s; }
   &::before {
     content: ""; position: absolute; left: 20px; top: -26px;
     width: 58px; height: 58px; border-radius: 50%;
@@ -161,6 +174,11 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
     background: var(--cl, oklch(0.88 0.012 250));
   }
 }
+@keyframes ha-cloud-drift {
+  from { transform: translateX(-10px); }
+  to   { transform: translateX(14px); }
+}
+
 .ha-cloud--cloudy { --cl: oklch(0.88 0.012 250); }
 .ha-cloud--rain   { --cl: oklch(0.74 0.013 252); }
 .ha-cloud--storm  { --cl: oklch(0.44 0.016 260); }
@@ -188,7 +206,7 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ha-star, .ha-flash { animation: none; }
+  .ha-star, .ha-flash, .ha-cloud, .ha-sun { animation: none; }
   .ha-star { opacity: .8; }
   .ha-drop { animation: none; top: 0; height: 100% !important; opacity: .12 !important; }
   .ha-flash { opacity: 0; }

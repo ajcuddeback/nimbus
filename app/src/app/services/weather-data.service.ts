@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable, forkJoin, shareReplay, switchMap, timer } from 'rxjs';
 import { WeatherData } from '../models/weather-data.interface';
 import { environment } from '../../environments/environment';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.interface';
+
+const POLL_INTERVAL_MS = 30_000;
 
 export interface CombinedWeatherData {
   current: ApiResponse<WeatherData[]>;
@@ -16,14 +18,9 @@ export interface CombinedWeatherData {
   providedIn: 'root'
 })
 export class WeatherDataService {
-  backendEndpoint: string;
-  private combinedWeatherData$: Map<string, Observable<CombinedWeatherData>> = new Map();
-
-  constructor(
-    private apiService: ApiService
-  ) {
-    this.backendEndpoint = environment.WEATHER_API_ENDPOINT;
-  }
+  private readonly apiService = inject(ApiService);
+  private readonly backendEndpoint = environment.WEATHER_API_ENDPOINT;
+  private readonly combinedWeatherDataByStation = new Map<string, Observable<CombinedWeatherData>>();
 
   getCurrentWeatherData(stationId: string): Observable<ApiResponse<WeatherData[]>> {
     const params = new HttpParams().set('stationId', stationId);
@@ -45,17 +42,19 @@ export class WeatherDataService {
   }
 
   getCombinedWeatherData(stationId: string): Observable<CombinedWeatherData> {
-    if (!this.combinedWeatherData$.has(stationId)) {
-      const combined$ = timer(0, 30000).pipe(
+    if (!this.combinedWeatherDataByStation.has(stationId)) {
+      const combined$ = timer(0, POLL_INTERVAL_MS).pipe(
         switchMap(() => forkJoin({
           current: this.getCurrentWeatherData(stationId),
           today: this.getTodaysWeatherData(stationId),
           summary: this.getAISummary(stationId)
         })),
-        shareReplay(1)
+        // refCount stops the polling timer once the last subscriber (page)
+        // is destroyed; without it the interval would run forever.
+        shareReplay({ bufferSize: 1, refCount: true })
       );
-      this.combinedWeatherData$.set(stationId, combined$);
+      this.combinedWeatherDataByStation.set(stationId, combined$);
     }
-    return this.combinedWeatherData$.get(stationId)!;
+    return this.combinedWeatherDataByStation.get(stationId)!;
   }
 }

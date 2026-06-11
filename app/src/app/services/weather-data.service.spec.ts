@@ -1,58 +1,33 @@
 import { TestBed } from '@angular/core/testing';
 
 import { WeatherDataService } from './weather-data.service';
-import {WeatherData} from '../models/weather-data.interface';
-import {Pageable} from '../models/pageable.interface';
-import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
-import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
+import { WeatherData } from '../models/weather-data.interface';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { environment } from '../../environments/environment';
 
 describe('WeatherDataService', () => {
   let service: WeatherDataService;
   let httpMock: HttpTestingController;
-  const mockWeatherData: Pageable<WeatherData> = {
-    content: [
-      {
-        temp: 22.44,
-        tempFormat: "C",
-        hum: 48.28,
-        pr: 1012.93,
-        prFormat: "hPa",
-        timestamp: 1750118062,
-        stationId: "6850aeae41635463bfa36a91",
-        id: "6850aeae41635463bfa36a91",
-        windDirection: "N",
-        windSpeed: 20,
-        windSpeedFormat: "mph",
-        rainfall: 20,
-        rainfallFormat: "mm"
-      }
-    ],
-    pageable: {
-      pageNumber: 0,
-      pageSize: 1,
-      sort: {
-        empty: false,
-        sorted: true,
-        unsorted: false
-      },
-      offset: 0,
-      unpaged: false,
-      paged: true,
-    },
-    totalPages: 30,
-    totalElements: 30,
-    last: false,
-    size: 1,
-    number: 0,
-    sort: {
-      empty: false,
-      sorted: true,
-      unsorted: false
-    },
-    first: true,
-    numberOfElements: 1,
-    empty: false
-  }
+
+  const stationId = 'test-station-id';
+  const mockWeatherData: WeatherData[] = [
+    {
+      temp: 22.44,
+      tempFormat: 'C',
+      hum: 48.28,
+      pr: 1012.93,
+      prFormat: 'hPa',
+      timestamp: 1750118062,
+      stationId,
+      id: '6850aeae41635463bfa36a91',
+      windDirection: 0,
+      windSpeed: 20,
+      windSpeedFormat: 'mph',
+      rainfall: 20,
+      rainfallFormat: 'mm'
+    }
+  ];
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -67,23 +42,41 @@ describe('WeatherDataService', () => {
 
   afterEach(() => {
     httpMock.verify();
-  })
+  });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should get weather data', () => {
-    const expectedUrl = 'http://localhost:8080/weatherData';
-    service.backendEndpoint = 'http://localhost:8080';
+  it('should get current weather data for a station', () => {
+    const received: unknown[] = [];
 
-    service.getWeatherData(-81, 21, 'timestamp,desc', 0, 1).subscribe((data) => {
-      expect(data).toEqual(mockWeatherData);
-    });
+    service.getCurrentWeatherData(stationId).subscribe(response => received.push(response));
 
-    const req = httpMock.expectOne(expectedUrl);
-    expect(req.request.method).toBe('GET');
+    const request = httpMock.expectOne(
+      `${environment.WEATHER_API_ENDPOINT}/weatherData/current?stationId=${stationId}`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(mockWeatherData);
 
-    req.flush(mockWeatherData);
+    expect(received).toEqual([
+      { state: 'loading' },
+      { state: 'success', data: mockWeatherData }
+    ]);
+  });
+
+  it('should report an error state when the request fails', () => {
+    const received: unknown[] = [];
+
+    service.getCurrentWeatherData(stationId).subscribe(response => received.push(response));
+
+    const request = httpMock.expectOne(
+      `${environment.WEATHER_API_ENDPOINT}/weatherData/current?stationId=${stationId}`
+    );
+    request.flush('boom', { status: 500, statusText: 'Server Error' });
+
+    expect(received.length).toBe(2);
+    expect(received[0]).toEqual({ state: 'loading' });
+    expect((received[1] as { state: string }).state).toBe('error');
   });
 });

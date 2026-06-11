@@ -107,6 +107,22 @@ export class WeatherUtilsService {
     return Math.round(weatherData.reduce((acc, curr) => acc + (curr.rainfall / 25.4), 0) * 100) / 100;
   }
 
+  /**
+   * Rainfall (mm) from live readings not yet rolled into the hourly data —
+   * i.e. newer than the latest hourly reading (or local midnight when the day
+   * has no hourly readings yet). The live feed spans many hours and overlaps
+   * the hourly readings, so summing the two feeds in full double-counts rain.
+   */
+  getLiveRainfallMmSinceLastHourly(todayHourly: WeatherData[], liveReadings: WeatherData[]): number {
+    const startOfLocalDaySeconds = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+    const boundaryTimestamp = todayHourly.length
+      ? Math.max(startOfLocalDaySeconds, ...todayHourly.map(reading => reading.timestamp))
+      : startOfLocalDaySeconds;
+    return liveReadings
+      .filter(reading => reading.timestamp > boundaryTimestamp)
+      .reduce((total, reading) => total + reading.rainfall, 0);
+  }
+
   // Data gathering helpers
   gatherTimestamps(weatherData: WeatherData[]): string[] {
     return weatherData.map(data => {

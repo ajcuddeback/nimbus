@@ -1,4 +1,4 @@
-﻿@if (weatherData$ | async; as weatherData) {
+@if (weatherData(); as weatherData) {
   @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
   } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
@@ -10,7 +10,7 @@
     @let currentData = weatherData.current.data;
     @let todayData = weatherData.today.data;
     @let rainTotal = getTodayRainTotal(todayData, currentData);
-    @let sky = computeSkyTheme(latest);
+    @let sky = skyTheme();
 
     <div class="screen lp-wrap">
       <div class="lp-pad">
@@ -19,7 +19,7 @@
         <header class="lp-top">
           <div class="eyebrow">Winter Haven, FL</div>
           <div class="lp-header-actions">
-            <span class="pill"><span class="live-dot"></span>&nbsp;{{ currentTime }}</span>
+            <span class="pill"><span class="live-dot"></span>&nbsp;{{ currentTime() }}</span>
             <button class="lp-theme-btn" (click)="toggleTheme()" [title]="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
               @if (isDark) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -44,139 +44,45 @@
             <div class="ha-sky__grad" [style.background]="sky.gradient"></div>
             @if (sky.stars) {
               <div class="ha-stars">
-                @for (star of STARS; track star.x) {
+                @for (star of stars; track $index) {
                   <span class="ha-star"
-                    [style.left.%]="star.x" [style.top.%]="star.y"
-                    [style.width.px]="star.r * 2" [style.height.px]="star.r * 2"
-                    [style.animation-delay.s]="star.d"></span>
+                    [style.left.%]="star.leftPercent" [style.top.%]="star.topPercent"
+                    [style.width.px]="star.radiusPx * 2" [style.height.px]="star.radiusPx * 2"
+                    [style.animation-delay.s]="star.twinkleDelaySeconds"></span>
                 }
               </div>
             }
-            @if (sky.glyph?.type === 'sun') {
-              <div class="ha-glyph" [style.left]="sky.glyph!.left" [style.top]="sky.glyph!.top">
+            @if (sky.sun; as sunGlyph) {
+              <div class="ha-glyph" [style.left]="sunGlyph.left" [style.top]="sunGlyph.top">
                 <div class="ha-sun"
-                  [style.width.px]="sky.glyph!.size" [style.height.px]="sky.glyph!.size"
-                  [style.background]="sunBackground(sky.glyph!.color!)"
-                  [style.box-shadow]="sunGlow(sky.glyph!.color!)"></div>
+                  [style.width.px]="sunGlyph.size" [style.height.px]="sunGlyph.size"
+                  [style.background]="sunBackground(sunGlyph.color)"
+                  [style.box-shadow]="sunGlow(sunGlyph.color)"></div>
               </div>
             }
-            @if (sky.glyph?.type === 'moon') {
-              @let moonPhase = getMoonPhase();
-              <div class="ha-glyph" [style.left]="sky.glyph!.left" [style.top]="sky.glyph!.top">
-                <svg class="ha-moon" [attr.width]="sky.glyph!.size" [attr.height]="sky.glyph!.size" viewBox="0 0 44 44">
-                  @if (moonPhase === MoonPhase.FULL_MOON) {
-                    <defs>
-                      <radialGradient id="ha-moonG" cx="38%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG)"/>
-                    <circle cx="18" cy="18.5" r="2.2" fill="oklch(0.80 0.05 78 / .55)"/>
-                    <circle cx="26" cy="24.5" r="1.5" fill="oklch(0.80 0.05 78 / .5)"/>
-                    <circle cx="20.5" cy="26" r="1" fill="oklch(0.80 0.05 78 / .45)"/>
-                  } @else if (moonPhase === MoonPhase.WAXING_GIBBOUS) {
-                    <defs>
-                      <radialGradient id="ha-moonG-wg" cx="55%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-wg-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
-                    <circle cx="27" cy="22" r="10.5" fill="url(#ha-moonG-wg)" clip-path="url(#ha-wg-clip)"/>
-                    <circle cx="25" cy="25" r="1.5" fill="oklch(0.80 0.05 78 / .5)" clip-path="url(#ha-wg-clip)"/>
-                  } @else if (moonPhase === MoonPhase.FIRST_QUARTER) {
-                    <defs>
-                      <radialGradient id="ha-moonG-fq" cx="55%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-fq-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-fq)"/>
-                    <circle cx="25" cy="25" r="1.5" fill="oklch(0.80 0.05 78 / .5)"/>
-                    <rect x="-1" y="0" width="23" height="44" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-fq-clip)"/>
-                  } @else if (moonPhase === MoonPhase.WAXING_CRESCENT) {
-                    <defs>
-                      <radialGradient id="ha-moonG-wc" cx="55%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-wc-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-wc)"/>
-                    <circle cx="12" cy="22" r="15" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-wc-clip)"/>
-                  } @else if (moonPhase === MoonPhase.NEW_MOON) {
-                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
-                  } @else if (moonPhase === MoonPhase.WANING_CRESCENT) {
-                    <defs>
-                      <radialGradient id="ha-moonG-nc" cx="45%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-nc-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-nc)"/>
-                    <circle cx="32" cy="22" r="15" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-nc-clip)"/>
-                  } @else if (moonPhase === MoonPhase.THIRD_QUARTER) {
-                    <defs>
-                      <radialGradient id="ha-moonG-tq" cx="45%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-tq-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="url(#ha-moonG-tq)"/>
-                    <circle cx="19" cy="19" r="2.2" fill="oklch(0.80 0.05 78 / .55)"/>
-                    <rect x="22" y="0" width="23" height="44" fill="oklch(0.20 0.058 270)" clip-path="url(#ha-tq-clip)"/>
-                  } @else if (moonPhase === MoonPhase.WANING_GIBBOUS) {
-                    <defs>
-                      <radialGradient id="ha-moonG-ng" cx="45%" cy="32%" r="78%">
-                        <stop offset="0%" stop-color="oklch(0.98 0.02 95)"/>
-                        <stop offset="100%" stop-color="oklch(0.86 0.055 78)"/>
-                      </radialGradient>
-                      <clipPath id="ha-ng-clip">
-                        <circle cx="22" cy="22" r="11.5"/>
-                      </clipPath>
-                    </defs>
-                    <circle cx="22" cy="22" r="11.5" fill="oklch(0.20 0.058 270)"/>
-                    <circle cx="17" cy="22" r="10.5" fill="url(#ha-moonG-ng)" clip-path="url(#ha-ng-clip)"/>
-                    <circle cx="17" cy="22" r="10.5" fill="url(#ha-moonG-ng)" clip-path="url(#ha-ng-clip)"/>
-                    <circle cx="19" cy="19" r="2.2" fill="oklch(0.80 0.05 78 / .55)" clip-path="url(#ha-ng-clip)"/>
-                  }
-
-                </svg>
+            @if (sky.moon; as moonGlyph) {
+              <div class="ha-glyph" [style.left]="moonGlyph.left" [style.top]="moonGlyph.top">
+                <app-moon [phaseFraction]="moonPhaseFraction()" [phaseName]="moonPhaseName()" [size]="moonGlyph.size"/>
               </div>
             }
-            @if (sky.clouds) {
+            @if (sky.clouds; as clouds) {
               <div class="ha-clouds">
-                @for (cloud of sky.clouds.items; track cloud.l) {
-                  <div [class]="'ha-cloud ha-cloud--' + getCondition(latest)"
-                    [style.left.%]="cloud.l" [style.top.%]="cloud.t"
-                    [style.transform]="'scale(' + cloud.s + ')'"
-                    [style.opacity]="cloud.o"></div>
+                @for (cloud of clouds; track $index) {
+                  <div [class]="'ha-cloud ha-cloud--' + condition()"
+                    [style.left.%]="cloud.leftPercent" [style.top.%]="cloud.topPercent"
+                    [style.--cloud-scale]="cloud.scale"
+                    [style.opacity]="cloud.opacity"></div>
                 }
               </div>
             }
             @if (sky.rainLevel > 0) {
               <div [class]="'ha-rain' + (sky.rainLevel === 2 ? ' ha-rain--storm' : '')">
-                @for (drop of (sky.rainLevel === 2 ? HEAVY_DROPS : LIGHT_DROPS); track drop.left) {
+                @for (drop of (sky.rainLevel === 2 ? heavyRainDrops : lightRainDrops); track $index) {
                   <span class="ha-drop"
-                    [style.left.%]="drop.left" [style.height.px]="drop.len"
-                    [style.opacity]="drop.op"
-                    [style.animation-duration.s]="drop.dur"
-                    [style.animation-delay.s]="drop.delay"></span>
+                    [style.left.%]="drop.leftPercent" [style.height.px]="drop.lengthPx"
+                    [style.opacity]="drop.opacity"
+                    [style.animation-duration.s]="drop.fallDurationSeconds"
+                    [style.animation-delay.s]="drop.fallDelaySeconds"></span>
                 }
               </div>
             }
@@ -197,7 +103,7 @@
               <span class="lp-temp">{{ tempInF(latest) }}</span>
               <span class="lp-temp__u">°F</span>
             </div>
-            <div class="lp-cond">{{ getConditionLabel(getCondition(latest)) }}</div>
+            <div class="lp-cond">{{ conditionLabel() }}</div>
             <div class="lp-feels">
               <span>Feels like <b>{{ formatTempShort(calculateFeelsLikeTemp(latest.temp, latest.hum, latest.windSpeed)) }}</b></span>
               <span class="lp-feels__hl">
@@ -214,7 +120,7 @@
                 </span>
                 Raspberry Pi · BME280 sensor
               </span>
-              <span class="lp-sensor__ago">Last Reading {{ lastReadingAgo }}</span>
+              <span class="lp-sensor__ago">Last Reading {{ lastReadingAgo() }}</span>
             </div>
           </div>
         </div>
