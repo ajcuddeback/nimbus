@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -24,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WeatherDataCache {
     private final WeatherAggregator weatherAggregator;
     private final WeatherCachePersistenceService persistenceService;
-    private final HashMap<String, List<WeatherRecord>> weatherDataMap = new HashMap<>();
+    private final ConcurrentHashMap<String, List<WeatherRecord>> weatherDataMap = new ConcurrentHashMap<>();
 
     public WeatherDataCache(
             final WeatherAggregator weatherAggregator,

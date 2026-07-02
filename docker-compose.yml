@@ -11,9 +11,14 @@ services:
       - /etc/nimbus.env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - WEATHER_CACHE_FILE_PATH=/data/weather-cache.json
     volumes:
       - /etc/nimbus:/etc/nimbus:ro
+      - nimbus-cache:/data
     restart: unless-stopped
 
   # Frontend is deployed via deploy-frontend.sh, not docker-compose.
   # See that script for the build + rsync process.
+
+volumes:
+  nimbus-cache:
