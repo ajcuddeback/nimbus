@@ -10,10 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.util.retry.Retry;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,6 +55,18 @@ public class WeatherDataCache {
     }
 
     public void addWeatherEntry(final String stationId, final WeatherRecord weatherRecord) {
+        final long weatherTimestamp = weatherRecord.timestamp();
+        final Instant weatherTimestampInstant = Instant.ofEpochSecond(weatherTimestamp);
+        final Instant recordHour = weatherTimestampInstant.truncatedTo(ChronoUnit.HOURS);
+        final Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        final Instant previousHour = currentHour.minus(1, ChronoUnit.HOURS);
+        // Accept the current hour or the immediately previous hour, so readings that arrive
+        // slightly late or with minor clock skew near the hour boundary are not dropped.
+        if (!recordHour.equals(currentHour) && !recordHour.equals(previousHour)) {
+            log.warn("Weather entry for {} does not belong to the current or previous hour - skipping", weatherTimestampInstant);
+            return;
+        }
+
         weatherDataMap.computeIfAbsent(stationId, k -> new CopyOnWriteArrayList<>()).add(weatherRecord);
     }
 
@@ -65,8 +74,16 @@ public class WeatherDataCache {
         return weatherDataMap.getOrDefault(stationId, new ArrayList<>());
     }
 
-    public void flushWeatherCache(final String stationId) {
-        weatherDataMap.get(stationId).clear();
+    /**
+     * Removes only the records that were included in an aggregation batch, preserving any
+     * newer records that arrived after the batch snapshot was taken (e.g. entries for the
+     * new hour that came in while the async aggregation was still retrying).
+     */
+    private void removeAggregatedRecords(final String stationId, final List<WeatherRecord> aggregatedRecords) {
+        final List<WeatherRecord> stationList = weatherDataMap.get(stationId);
+        if (stationList != null) {
+            stationList.removeAll(aggregatedRecords);
+        }
     }
 
     public Set<String> getWeatherStationIds() {
@@ -100,7 +117,7 @@ public class WeatherDataCache {
             final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
 
             if (!weatherRecords.isEmpty()) {
-                List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) ||
+                final List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) &&
                         !Instant.ofEpochSecond(weatherRecord.timestamp()).isAfter(topOfCurrentHourInstant)).toList();
 
                 this.weatherAggregator.aggregateWeather(stationId, filteredRecords)
@@ -119,7 +136,7 @@ public class WeatherDataCache {
                                         })
                         )
                         .doOnError(e -> log.error("All attempts to save weather data failed. Flushing cache...", e))
-                        .doFinally(v -> this.flushWeatherCache(stationId))
+                        .doFinally(v -> this.removeAggregatedRecords(stationId, filteredRecords))
                         .subscribe(
                         weatherDataResponse -> {
                             log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
