@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -44,7 +46,17 @@ public class WeatherCachePersistenceService {
             CacheSnapshot snapshot = new CacheSnapshot(currentHourTimestamp, new HashMap<>(weatherData));
 
             String json = objectMapper.writeValueAsString(snapshot);
-            Files.writeString(cacheFilePath, json);
+
+            // Write to a temp file then atomically swap it into place, so a crash mid-write
+            // can never leave a truncated/corrupt cache file that fails to restore.
+            Path tempFile = cacheFilePath.resolveSibling(cacheFilePath.getFileName() + ".tmp");
+            Files.writeString(tempFile, json);
+            try {
+                Files.move(tempFile, cacheFilePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                // Fall back to a non-atomic replace if the filesystem doesn't support atomic moves.
+                Files.move(tempFile, cacheFilePath, StandardCopyOption.REPLACE_EXISTING);
+            }
 
             log.debug("Successfully persisted weather cache to disk with {} stations", weatherData.size());
         } catch (IOException e) {
@@ -81,7 +93,8 @@ public class WeatherCachePersistenceService {
             return Optional.of(snapshot.weatherData());
 
         } catch (IOException e) {
-            log.error("Failed to load weather cache from disk", e);
+            log.error("Failed to load weather cache from disk, discarding corrupt cache file", e);
+            deleteCache();
             return Optional.empty();
         }
     }
