@@ -47,8 +47,14 @@ public class WeatherCachePersistenceService {
 
             String json = objectMapper.writeValueAsString(snapshot);
 
-            // Write to a temp file then atomically swap it into place, so a crash mid-write
-            // can never leave a truncated/corrupt cache file that fails to restore.
+
+
+           /** Simply writing directly to cache could cause an incomplete JSON write on the cache file itself!
+            Writing to a file is not Atomic. It can take many cycles.
+            If crash happens or server restarts mid-cache write,we end up w/ incomplete JSON and corrupted cache file
+            Write to a temp file then atomically swap it into place, so a crash mid-write
+            can never leave a truncated/corrupt cache file that fails to restore.
+            */
             Path tempFile = cacheFilePath.resolveSibling(cacheFilePath.getFileName() + ".tmp");
             Files.writeString(tempFile, json);
             try {

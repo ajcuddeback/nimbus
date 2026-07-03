@@ -106,7 +106,6 @@ public class WeatherDataCache {
     public void aggregateHourly() {
         log.info("Running hourly aggregation");
         persistenceService.deleteCache();
-        final Instant cutoffStart = Instant.now().minus(1, ChronoUnit.HOURS);
         final Instant now = Instant.now();
         final ZonedDateTime zonedDateTime = now.atZone(ZoneId.of("UTC"));
         final ZonedDateTime topOfCurrentHour = zonedDateTime.withMinute(0).withSecond(0).withNano(0);
@@ -118,8 +117,12 @@ public class WeatherDataCache {
             final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
 
             if (!weatherRecords.isEmpty()) {
-                final List<WeatherRecord> filteredRecords = weatherRecords.stream().filter(weatherRecord -> !Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(cutoffStart) &&
-                        !Instant.ofEpochSecond(weatherRecord.timestamp()).isAfter(topOfCurrentHourInstant)).toList();
+                // Aggregate everything from before the current hour (not just the last 60 minutes),
+                // so a record stamped exactly on an hour boundary can't slip below a now-minus-1h
+                // cutoff and become an un-aggregated, un-purged straggler.
+                final List<WeatherRecord> filteredRecords = weatherRecords.stream()
+                        .filter(weatherRecord -> Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(topOfCurrentHourInstant))
+                        .toList();
 
                 this.weatherAggregator.aggregateWeather(stationId, filteredRecords)
                         .retryWhen(
