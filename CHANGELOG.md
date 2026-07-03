@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.0](https://github.com/ajcuddeback/nimbus/compare/v1.7.0...v1.8.0) (2026-07-03)
+
+
+### Features
+
+* Multiple fixes w/ moon and refactor for Angular best practices ([843d3c7](https://github.com/ajcuddeback/nimbus/commit/843d3c71cde88602686b88353f592d6244be7fe9))
+
+
+### Bug Fixes
+
+* Adds thread safety for hashmap and fixes cache persistence issue now that we run in docker container ([603689d](https://github.com/ajcuddeback/nimbus/commit/603689d6efbc349a53e234d9c351c1aee79eacde))
+* Fixing issue w/ cache persisting data that's not part of current hour. Also ensuring we take a snapshot of cache for current hour and ONLY remove items from snapshot of in-memory cache. ([ff8780d](https://github.com/ajcuddeback/nimbus/commit/ff8780d2c96c6fdee241421c6d9fc9bc96a5ce7e))
+* Fixing issue where at top of hour we could have a straggler come in during aggregation causing a filter miss and orphan ([2aa900a](https://github.com/ajcuddeback/nimbus/commit/2aa900afbfbd5f6b276f6bac5dda3e9f2819141f))
+* Safe cache persistence mid-crash ([a02329a](https://github.com/ajcuddeback/nimbus/commit/a02329a1b3eb839256870560eeed333df1c1d34c))
+
 ## [1.7.0](https://github.com/ajcuddeback/nimbus/compare/v1.6.0...v1.7.0) (2026-06-10)
 
 
