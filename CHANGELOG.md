@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/ajcuddeback/nimbus/compare/v1.8.0...v1.8.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* More cache hardening ([95120f2](https://github.com/ajcuddeback/nimbus/commit/95120f218d87d88017e286dc3463faea60a3b1e6))
+
 ## [1.8.0](https://github.com/ajcuddeback/nimbus/compare/v1.7.0...v1.8.0) (2026-07-03)
 
 
