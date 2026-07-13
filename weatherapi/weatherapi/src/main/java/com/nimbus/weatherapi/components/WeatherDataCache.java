@@ -41,15 +41,27 @@ public class WeatherDataCache {
     }
 
     /**
-     * Restores the weather cache from disk if it exists and is from the current hour.
+     * Restores the weather cache from disk on startup. Records are age-filtered with the same
+     * current/previous-hour rule that live entries use, so a stale block that was persisted (and
+     * repeatedly re-stamped as "current hour" by the periodic persist) can never be re-admitted
+     * to the in-memory cache and orphaned forever.
      */
     private void restoreCacheFromDisk() {
         persistenceService.loadCache().ifPresent(restoredData -> {
             restoredData.forEach((stationId, records) -> {
-                List<WeatherRecord> stationList = weatherDataMap.computeIfAbsent(
-                        stationId, k -> new CopyOnWriteArrayList<>()
-                );
-                stationList.addAll(records);
+                final List<WeatherRecord> freshRecords = records.stream()
+                        .filter(record -> belongsToCurrentOrPreviousHour(record.timestamp()))
+                        .toList();
+
+                final int dropped = records.size() - freshRecords.size();
+                if (dropped > 0) {
+                    log.warn("Dropped {} stale record(s) for station {} while restoring cache from disk", dropped, stationId);
+                }
+
+                if (!freshRecords.isEmpty()) {
+                    weatherDataMap.computeIfAbsent(stationId, k -> new CopyOnWriteArrayList<>())
+                            .addAll(freshRecords);
+                }
             });
             log.info("Restored {} stations from disk cache", restoredData.size());
         });
@@ -57,18 +69,25 @@ public class WeatherDataCache {
 
     public void addWeatherEntry(final String stationId, final WeatherRecord weatherRecord) {
         final long weatherTimestamp = weatherRecord.timestamp();
-        final Instant weatherTimestampInstant = Instant.ofEpochSecond(weatherTimestamp);
-        final Instant recordHour = weatherTimestampInstant.truncatedTo(ChronoUnit.HOURS);
-        final Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
-        final Instant previousHour = currentHour.minus(1, ChronoUnit.HOURS);
-        // Accept the current hour or the immediately previous hour, so readings that arrive
-        // slightly late or with minor clock skew near the hour boundary are not dropped.
-        if (!recordHour.equals(currentHour) && !recordHour.equals(previousHour)) {
-            log.warn("Weather entry for {} does not belong to the current or previous hour - skipping", weatherTimestampInstant);
+        if (!belongsToCurrentOrPreviousHour(weatherTimestamp)) {
+            log.warn("Weather entry for {} does not belong to the current or previous hour - skipping",
+                    Instant.ofEpochSecond(weatherTimestamp));
             return;
         }
 
         weatherDataMap.computeIfAbsent(stationId, k -> new CopyOnWriteArrayList<>()).add(weatherRecord);
+    }
+
+    /**
+     * A record is retained only if it falls in the current or the immediately previous hour, so
+     * readings that arrive slightly late or with minor clock skew near the hour boundary are not
+     * dropped, while genuinely stale data is rejected. Used for both live ingestion and disk restore.
+     */
+    private boolean belongsToCurrentOrPreviousHour(final long weatherTimestamp) {
+        final Instant recordHour = Instant.ofEpochSecond(weatherTimestamp).truncatedTo(ChronoUnit.HOURS);
+        final Instant currentHour = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        final Instant previousHour = currentHour.minus(1, ChronoUnit.HOURS);
+        return recordHour.equals(currentHour) || recordHour.equals(previousHour);
     }
 
     public List<WeatherRecord> getWeatherData(final String stationId) {
@@ -114,41 +133,46 @@ public class WeatherDataCache {
         final Set<String> stationIds = getWeatherStationIds();
 
         stationIds.forEach(stationId -> {
-            final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
+            try {
+                final List<WeatherRecord> weatherRecords = weatherDataMap.getOrDefault(stationId, new ArrayList<>());
 
-            if (!weatherRecords.isEmpty()) {
-                // Aggregate everything from before the current hour (not just the last 60 minutes),
-                // so a record stamped exactly on an hour boundary can't slip below a now-minus-1h
-                // cutoff and become an un-aggregated, un-purged straggler.
-                final List<WeatherRecord> filteredRecords = weatherRecords.stream()
-                        .filter(weatherRecord -> Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(topOfCurrentHourInstant))
-                        .toList();
+                if (!weatherRecords.isEmpty()) {
+                    // Aggregate everything from before the current hour (not just the last 60 minutes),
+                    // so a record stamped exactly on an hour boundary can't slip below a now-minus-1h
+                    // cutoff and become an un-aggregated, un-purged straggler.
+                    final List<WeatherRecord> filteredRecords = weatherRecords.stream()
+                            .filter(weatherRecord -> Instant.ofEpochSecond(weatherRecord.timestamp()).isBefore(topOfCurrentHourInstant))
+                            .toList();
 
-                this.weatherAggregator.aggregateWeather(stationId, filteredRecords)
-                        .retryWhen(
-                                Retry.backoff(
-                                        3,
-                                        Duration.ofSeconds(1)
-                                )
-                                        .filter(err -> {
-                                            if (err instanceof DuplicateKeyException) {
-                                                log.warn("Failed to save weather data. Unique constraint failed.");
-                                                return false;
-                                            }
+                    this.weatherAggregator.aggregateWeather(stationId, filteredRecords)
+                            .retryWhen(
+                                    Retry.backoff(
+                                            3,
+                                            Duration.ofSeconds(1)
+                                    )
+                                            .filter(err -> {
+                                                if (err instanceof DuplicateKeyException) {
+                                                    log.warn("Failed to save weather data. Unique constraint failed.");
+                                                    return false;
+                                                }
 
-                                            return true;
-                                        })
-                        )
-                        .doOnError(e -> log.error("All attempts to save weather data failed. Flushing cache...", e))
-                        .doFinally(v -> this.removeAggregatedRecords(stationId, filteredRecords))
-                        .subscribe(
-                        weatherDataResponse -> {
-                            log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
-                        },
-                        err -> {
-                            log.error("Failed to save weather data", err);
-                        }
-                );
+                                                return true;
+                                            })
+                            )
+                            .doOnError(e -> log.error("All attempts to save weather data failed. Flushing cache...", e))
+                            .doFinally(v -> this.removeAggregatedRecords(stationId, filteredRecords))
+                            .subscribe(
+                            weatherDataResponse -> {
+                                log.info("Successfully created weather data entry with id {}", weatherDataResponse.getId());
+                            },
+                            err -> {
+                                log.error("Failed to save weather data", err);
+                            }
+                    );
+                }
+            } catch (Exception e) {
+                // Isolate failures per station so one bad station can't abort the sweep for the rest.
+                log.error("Failed to aggregate weather data for station {}", stationId, e);
             }
         });
     }
