@@ -196,7 +196,11 @@ public final class WeatherDataService {
                 .append("windSpeedFormat", first("windSpeedFormat"))
                 .append("rainfall", first("rainfall"))
                 .append("rainfallFormat", first("rainfallFormat"))
-                .append("timestamp", first("timestamp")));
+                .append("timestamp", first("timestamp"))
+                // Carried through the dedupe explicitly: a $group drops every field it does not
+                // accumulate, so without this the hour-bucket stage below reads $stationId off a
+                // document that no longer has it and every aggregate serializes stationId as null.
+                .append("stationId", first("stationId")));
 
         final Document windRadians = new Document("$degreesToRadians", "$windDirection");
         final Document hourGroup = new Document("$group", new Document("_id",
@@ -213,7 +217,6 @@ public final class WeatherDataService {
                 .append("tempFormat", first("tempFormat"))
                 .append("prFormat", first("prFormat"))
                 .append("windSpeedFormat", first("windSpeedFormat"))
-                .append("rainfallFormat", first("rainfallFormat"))
                 .append("stationId", first("stationId")));
 
         // Circular mean -> degrees, normalized into [0, 360) so an exact 360 maps back to 0.
