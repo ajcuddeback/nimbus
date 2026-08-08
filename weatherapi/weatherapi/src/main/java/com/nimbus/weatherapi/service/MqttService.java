@@ -1,6 +1,5 @@
 package com.nimbus.weatherapi.service;
 
-import com.nimbus.weatherapi.components.WeatherDataCache;
 import com.nimbus.weatherapi.utils.MqttSSLUtility;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -21,7 +20,7 @@ public final class MqttService {
     private MqttAsyncClient mqttClient;
     private final StationRegistrationService stationRegistrationService;
     private final LightningService lightningService;
-    private final WeatherDataCache weatherDataCache;
+    private final WeatherDataService weatherDataService;
 
     @Value("${mqtt.broker.url}")
     private String brokerUrl;
@@ -47,11 +46,11 @@ public final class MqttService {
     public MqttService(
             final StationRegistrationService stationRegistrationService,
             final LightningService lightningService,
-            final WeatherDataCache weatherDataCache
+            final WeatherDataService weatherDataService
             ) {
         this.stationRegistrationService = stationRegistrationService;
         this.lightningService = lightningService;
-        this.weatherDataCache = weatherDataCache;
+        this.weatherDataService = weatherDataService;
     }
 
     @PostConstruct
@@ -76,7 +75,7 @@ public final class MqttService {
             throw new RuntimeException(e);
         }
 
-        this.mqttClient.setCallback(new WeatherDataCallback(stationRegistrationService, this, lightningService, weatherDataCache));
+        this.mqttClient.setCallback(new WeatherDataCallback(stationRegistrationService, this, lightningService, weatherDataService));
 
         connectionOptions.setAutomaticReconnect(true);
         connectionOptions.setCleanStart(false);

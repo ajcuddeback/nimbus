@@ -8,7 +8,7 @@ import { WeatherDataService } from '../../services/weather-data.service';
 import { WeatherUtilsService } from '../../services/weather-utils.service';
 import { MoonPhaseService } from '../../services/moon-phase.service';
 import { ThemeService } from '../../services/theme.service';
-import { WeatherData } from '../../models/weather-data.interface';
+import { CurrentWeather, WeatherData } from '../../models/weather-data.interface';
 import { LinearMeterComponent } from '../shared/linear-meter/linear-meter.component';
 import { NimbusCompassComponent } from '../shared/nimbus-compass/nimbus-compass.component';
 import { MoonComponent } from '../shared/moon/moon.component';
@@ -74,6 +74,7 @@ interface TimeOfDayTheme {
 /** Rainfall (mm in the latest reading) above which we call it a storm / rain. */
 const STORM_RAINFALL_MM = 2;
 const RAIN_RAINFALL_MM = 0.3;
+
 
 const TIME_OF_DAY_THEMES: Record<TimeOfDay, TimeOfDayTheme> = {
   morning: {
@@ -187,26 +188,24 @@ export class LandingPageComponent {
     new Date(this.nowSeconds() * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
   );
 
-  private readonly latestReading = computed<WeatherData | null>(() => {
+  private readonly current = computed<CurrentWeather | null>(() => {
     const data = this.weatherData();
-    if (!data || data.current.state !== 'success' || data.current.data.length === 0) {
+    if (!data || data.current.state !== 'success' || !data.current.data) {
       return null;
     }
-    return data.current.data[data.current.data.length - 1];
+    return data.current.data;
   });
+
+  private readonly latestReading = computed<WeatherData | null>(() => this.current()?.reading ?? null);
+
+  protected readonly isStale = computed(() => this.weatherUtils.isStale(this.current(), this.nowSeconds()));
 
   protected readonly lastReadingAgo = computed(() => {
     const latest = this.latestReading();
     if (!latest) {
       return '';
     }
-    const elapsedSeconds = Math.max(0, this.nowSeconds() - latest.timestamp);
-    if (elapsedSeconds < 60) {
-      return `${elapsedSeconds}s ago`;
-    }
-    const minutes = Math.floor(elapsedSeconds / 60);
-    const seconds = elapsedSeconds % 60;
-    return `${minutes}m ${String(seconds).padStart(2, '0')}s ago`;
+    return this.weatherUtils.formatElapsed(this.weatherUtils.elapsedSince(latest, this.nowSeconds()));
   });
 
   // TODO: account for the station's location and timezone to get proper sunrise/sunset
@@ -225,8 +224,13 @@ export class LandingPageComponent {
   });
 
   protected readonly condition = computed<WeatherCondition>(() => {
-    const latest = this.latestReading();
-    const rainfallMm = latest?.rainfall ?? 0;
+    // Falling rain and lightning are assertions about right now. Driving them from a reading the
+    // station sent hours ago would animate weather that may have long since passed, so a stale
+    // reading gets the plain sky and the offline badge carries the explanation instead.
+    if (this.isStale()) {
+      return 'clear';
+    }
+    const rainfallMm = this.latestReading()?.rainfall ?? 0;
     if (rainfallMm > STORM_RAINFALL_MM) {
       return 'storm';
     }
@@ -236,7 +240,9 @@ export class LandingPageComponent {
     return 'clear';
   });
 
-  protected readonly conditionLabel = computed(() => CONDITION_LABELS[this.condition()]);
+  protected readonly conditionLabel = computed(() =>
+    this.isStale() ? 'Last known conditions' : CONDITION_LABELS[this.condition()]
+  );
 
   protected readonly skyTheme = computed<SkyTheme>(() => this.buildSkyTheme(this.timeOfDay(), this.condition()));
 
@@ -323,9 +329,10 @@ export class LandingPageComponent {
     return this.weatherUtils.getWindDirectionLabel(degrees);
   }
 
-  protected getTodayRainTotal(today: WeatherData[], current: WeatherData[]): number {
-    const liveRainfallInches = this.weatherUtils.getLiveRainfallMmSinceLastHourly(today, current) / 25.4;
-    return Math.round((this.weatherUtils.getRainTotal(today) + liveRainfallInches) * 100) / 100;
+  // Today's hourly aggregates are computed at read time and already include the current,
+  // in-progress hour, so the hourly rain total is the whole-day total — no live top-up needed.
+  protected getTodayRainTotal(today: WeatherData[]): number {
+    return this.weatherUtils.getRainTotal(today);
   }
 
   protected getRainMeterMax(total: number): number {

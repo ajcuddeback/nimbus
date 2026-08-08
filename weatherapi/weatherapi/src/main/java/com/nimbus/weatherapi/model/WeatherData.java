@@ -2,31 +2,16 @@ package com.nimbus.weatherapi.model;
 
 import lombok.Getter;
 import lombok.ToString;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
-import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * Read-time, hourly-aggregated weather view. This is no longer persisted; it is computed on the fly
+ * by aggregating the raw minute records from the {@code weather_data_series} time-series collection.
+ * The {@code timestamp} is the epoch-second start of the aggregated hour (UTC), preserving the shape
+ * the frontend previously consumed from the old {@code weather_data} collection.
+ */
 @Getter
-@Document(collection = "weather_data")
-@CompoundIndexes({
-        @CompoundIndex(
-                name = "station_timestamp_unique",
-                unique = true,
-                def = "{'stationId': 1, 'timestamp': 1}"
-        ),
-        @CompoundIndex(
-                name = "station_timestamp_desc_idx",
-                def = "{'stationId': 1, 'timestamp': -1}"
-        )
-})
 @ToString
 public final class WeatherData {
-    @Id
-    private String id;
     private final double temp;
     private final String tempFormat;
     private final double hum;

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ThemeService } from '../../services/theme.service';
 import { WeatherDataService } from '../../services/weather-data.service';
@@ -45,42 +46,53 @@ export class DashboardComponent {
   private readonly datePipe = inject(DatePipe);
   private readonly themeService = inject(ThemeService);
 
-  protected readonly weatherData = toSignal(this.weatherDataService.getCombinedWeatherData(STATION_ID));
+  protected readonly weatherData = toSignal(this.weatherDataService.getDetailedWeatherData(STATION_ID));
   protected readonly liveMode = signal(false);
 
-  /** Current and today readings, available only once both requests succeed. */
+  /**
+   * Wall-clock driver for the offline badge. Ticks once a second so a station that stops reporting
+   * mid-poll-interval is flagged as it crosses the threshold, not up to 30s later.
+   */
+  private readonly nowSeconds = signal(Math.floor(Date.now() / 1000));
+
+  /** Latest reading, this hour's minute readings, and today's hourly readings, once all succeed. */
   private readonly loadedReadings = computed(() => {
     const data = this.weatherData();
-    if (!data || data.current.state !== 'success' || data.today.state !== 'success') {
+    if (!data || data.current.state !== 'success' || data.currentHour.state !== 'success' || data.today.state !== 'success') {
       return null;
     }
-    return { current: data.current.data, today: data.today.data };
+    return { current: data.current.data, currentHour: data.currentHour.data, today: data.today.data };
   });
+
+  protected readonly isStale = computed(() =>
+    this.weatherUtils.isStale(this.loadedReadings()?.current ?? null, this.nowSeconds())
+  );
+
+  protected readonly lastReadingAgo = computed(() => {
+    const reading = this.loadedReadings()?.current?.reading;
+    if (!reading) {
+      return '';
+    }
+    return this.weatherUtils.formatElapsed(this.weatherUtils.elapsedSince(reading, this.nowSeconds()));
+  });
+
+  constructor() {
+    interval(1000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.nowSeconds.set(Math.floor(Date.now() / 1000)));
+  }
 
   /**
-   * Today's hourly readings plus a synthetic reading for the in-progress
-   * hour, whose rainfall is the rain seen since the last hourly reading.
+   * The readings driving the charts, per the LIVE/TODAY toggle.
+   * LIVE shows this hour's raw minute readings; TODAY shows the hourly aggregates
+   * (which, being computed at read time, already include the in-progress hour).
    */
-  private readonly todayWithCurrentHour = computed<WeatherData[]>(() => {
-    const loaded = this.loadedReadings();
-    if (!loaded) {
-      return [];
-    }
-    if (!loaded.current.length) {
-      return loaded.today;
-    }
-    const currentHourRainfall = this.weatherUtils.getLiveRainfallMmSinceLastHourly(loaded.today, loaded.current);
-    const latest = loaded.current[loaded.current.length - 1];
-    return [...loaded.today, { ...latest, rainfall: currentHourRainfall }];
-  });
-
-  /** The readings driving the charts, per the LIVE/TODAY toggle. */
   private readonly chartReadings = computed<WeatherData[]>(() => {
     const loaded = this.loadedReadings();
     if (!loaded) {
       return [];
     }
-    return sortByTimestamp(this.liveMode() ? loaded.current : this.todayWithCurrentHour());
+    return sortByTimestamp(this.liveMode() ? loaded.currentHour : loaded.today);
   });
 
   protected readonly chartLabels = computed(() =>
@@ -108,7 +120,7 @@ export class DashboardComponent {
   });
 
   protected readonly rainTotalToday = computed(() =>
-    this.weatherUtils.getRainTotal(this.todayWithCurrentHour())
+    this.weatherUtils.getRainTotal(this.loadedReadings()?.today ?? [])
   );
 
   /** How many x-axis labels to skip between ticks; minute data needs more thinning. */

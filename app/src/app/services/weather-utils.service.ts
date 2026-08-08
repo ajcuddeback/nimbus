@@ -1,12 +1,53 @@
 import { Injectable } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { WeatherData } from '../models/weather-data.interface';
+import { CurrentWeather, WeatherData } from '../models/weather-data.interface';
+
+/**
+ * Mirrors the API's `weather.current.stale-after`. Only used to re-check staleness between polls —
+ * the server's own verdict still wins, so drift between the two shows up as a slightly early or
+ * late offline badge, never as a wrong one.
+ */
+export const STALE_AFTER_SECONDS = 300;
 
 @Injectable({
   providedIn: 'root'
 })
 export class WeatherUtilsService {
   constructor(private datePipe: DatePipe) {}
+
+  /**
+   * Whether the station has gone quiet. The API's `stale` verdict decides it, but that verdict is
+   * only refreshed when we poll; between polls the local clock keeps ticking, so we re-check the
+   * reading's age too. Without that, a station dying just after a poll would read as live for the
+   * rest of the interval.
+   */
+  isStale(current: CurrentWeather | null, nowSeconds: number): boolean {
+    if (!current) {
+      return false;
+    }
+    return current.stale || this.elapsedSince(current.reading, nowSeconds) > STALE_AFTER_SECONDS;
+  }
+
+  /** Seconds between a reading and now, clamped so clock skew can't produce a negative age. */
+  elapsedSince(reading: WeatherData, nowSeconds: number): number {
+    return Math.max(0, nowSeconds - reading.timestamp);
+  }
+
+  /** "42s ago" / "6m 05s ago" / "2h 13m ago" / "3d 4h ago". */
+  formatElapsed(elapsedSeconds: number): string {
+    if (elapsedSeconds < 60) {
+      return `${elapsedSeconds}s ago`;
+    }
+    const minutes = Math.floor(elapsedSeconds / 60);
+    if (minutes < 60) {
+      return `${minutes}m ${String(elapsedSeconds % 60).padStart(2, '0')}s ago`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return `${hours}h ${minutes % 60}m ago`;
+    }
+    return `${Math.floor(hours / 24)}d ${hours % 24}h ago`;
+  }
 
   // Temperature formatting
   formatTemp(temp: number, format: 'f' | 'c'): string {

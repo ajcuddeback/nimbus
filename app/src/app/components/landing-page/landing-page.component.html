@@ -3,13 +3,12 @@
     <ng-container *ngTemplateOutlet="loading" />
   } @else if (weatherData.current.state === 'error' || weatherData.summary.state === 'error' || weatherData.today.state === 'error') {
     <ng-container *ngTemplateOutlet="errorState" />
-  } @else if (!weatherData.current.data.length) {
+  } @else if (!weatherData.current.data) {
     <ng-container *ngTemplateOutlet="emptyState" />
   } @else {
-    @let latest = weatherData.current.data[weatherData.current.data.length - 1];
-    @let currentData = weatherData.current.data;
+    @let latest = weatherData.current.data.reading;
     @let todayData = weatherData.today.data;
-    @let rainTotal = getTodayRainTotal(todayData, currentData);
+    @let rainTotal = getTodayRainTotal(todayData);
     @let sky = skyTheme();
 
     <div class="screen lp-wrap">
@@ -93,13 +92,21 @@
           <!-- Content on top of sky -->
           <div class="lp-hero__in">
             <div class="lp-hero__top">
-              <span class="lp-live">
-                <span class="lp-live__dot"></span>
-                LIVE
-                <span class="lp-live__sub">streaming from NIMBUS-01</span>
-              </span>
+              @if (isStale()) {
+                <span class="lp-live lp-live--offline">
+                  <span class="lp-live__dot"></span>
+                  OFFLINE
+                  <span class="lp-live__sub">NIMBUS-01 stopped reporting</span>
+                </span>
+              } @else {
+                <span class="lp-live">
+                  <span class="lp-live__dot"></span>
+                  LIVE
+                  <span class="lp-live__sub">streaming from NIMBUS-01</span>
+                </span>
+              }
             </div>
-            <div class="lp-temprow">
+            <div class="lp-temprow" [class.is-stale]="isStale()">
               <span class="lp-temp">{{ tempInF(latest) }}</span>
               <span class="lp-temp__u">°F</span>
             </div>
@@ -120,7 +127,7 @@
                 </span>
                 Raspberry Pi · BME280 sensor
               </span>
-              <span class="lp-sensor__ago">Last Reading {{ lastReadingAgo() }}</span>
+              <span class="lp-sensor__ago" [class.is-stale]="isStale()">Last Reading {{ lastReadingAgo() }}</span>
             </div>
           </div>
         </div>
