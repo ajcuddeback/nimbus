@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/ajcuddeback/nimbus/compare/v1.8.0...v1.9.0) (2026-08-08)
+
+
+### Features
+
+* Migrates all code to support a time series database and switches the API to store minute by minute data. Because time series can be greatly leveraged for weather data that changes slowly over time - we can take great advantage of time series compression to save on storage costs allowing us to store minute by minute data for years to come. ([19e7c2e](https://github.com/ajcuddeback/nimbus/commit/19e7c2e750167957a364b3fba44b09aaabc438b2))
+
+
+### Bug Fixes
+
+* More cache hardening ([95120f2](https://github.com/ajcuddeback/nimbus/commit/95120f218d87d88017e286dc3463faea60a3b1e6))
+
 ## [1.8.0](https://github.com/ajcuddeback/nimbus/compare/v1.7.0...v1.8.0) (2026-07-03)
 
 
