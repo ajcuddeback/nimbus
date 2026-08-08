@@ -1,6 +1,6 @@
 package com.nimbus.weatherapi.controller;
 
-import com.nimbus.weatherapi.components.WeatherDataCache;
+import com.nimbus.weatherapi.model.CurrentWeather;
 import com.nimbus.weatherapi.model.WeatherData;
 import com.nimbus.weatherapi.model.WeatherRecord;
 import com.nimbus.weatherapi.service.WeatherDataService;
@@ -10,20 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/weatherData")
 public class WeatherDataController {
     private final WeatherDataService weatherDataService;
-    private final WeatherDataCache weatherDataCache;
 
-    public WeatherDataController(
-            WeatherDataService weatherDataService,
-            WeatherDataCache weatherDataCache
-    ) {
+    public WeatherDataController(WeatherDataService weatherDataService) {
         this.weatherDataService = weatherDataService;
-        this.weatherDataCache = weatherDataCache;
     }
 
     @GetMapping
@@ -34,13 +27,28 @@ public class WeatherDataController {
         return weatherDataService.getWeatherDataByLocation(stationId, pageable);
     }
 
+    /**
+     * The single most recent minute reading for a station, tagged with its age so callers can tell a
+     * live reading from the last thing an offline station happened to send. Empty when the station
+     * has never reported.
+     */
     @GetMapping("/current")
-    public Mono<List<WeatherRecord>> getLatestWeatherData(
+    public Mono<CurrentWeather> getCurrentWeather(
             @RequestParam String stationId
     ) {
-        return Mono.just(weatherDataCache.getWeatherData(stationId));
+        return weatherDataService.getCurrentWeather(stationId);
     }
 
+    /**
+     * Raw minute readings for the current hour, in the caller's timezone.
+     */
+    @GetMapping("/hour")
+    public Flux<WeatherRecord> getCurrentHourWeather(
+            @RequestParam String stationId,
+            @RequestParam String timezone
+    ) {
+        return weatherDataService.getCurrentHourWeather(stationId, timezone);
+    }
 
     @GetMapping("/today")
     public Flux<WeatherData> getTodaysWeather(

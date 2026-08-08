@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { WeatherDataService } from './weather-data.service';
-import { WeatherData } from '../models/weather-data.interface';
+import { CurrentWeather, WeatherData } from '../models/weather-data.interface';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { environment } from '../../environments/environment';
@@ -11,23 +11,27 @@ describe('WeatherDataService', () => {
   let httpMock: HttpTestingController;
 
   const stationId = 'test-station-id';
-  const mockWeatherData: WeatherData[] = [
-    {
-      temp: 22.44,
-      tempFormat: 'C',
-      hum: 48.28,
-      pr: 1012.93,
-      prFormat: 'hPa',
-      timestamp: 1750118062,
-      stationId,
-      id: '6850aeae41635463bfa36a91',
-      windDirection: 0,
-      windSpeed: 20,
-      windSpeedFormat: 'mph',
-      rainfall: 20,
-      rainfallFormat: 'mm'
-    }
-  ];
+  const mockWeatherData: WeatherData = {
+    temp: 22.44,
+    tempFormat: 'C',
+    hum: 48.28,
+    pr: 1012.93,
+    prFormat: 'hPa',
+    timestamp: 1750118062,
+    stationId,
+    id: '6850aeae41635463bfa36a91',
+    windDirection: 0,
+    windSpeed: 20,
+    windSpeedFormat: 'mph',
+    rainfall: 20,
+    rainfallFormat: 'mm'
+  };
+
+  const mockCurrentWeather: CurrentWeather = {
+    reading: mockWeatherData,
+    stale: false,
+    ageSeconds: 12
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -57,11 +61,11 @@ describe('WeatherDataService', () => {
       `${environment.WEATHER_API_ENDPOINT}/weatherData/current?stationId=${stationId}`
     );
     expect(request.request.method).toBe('GET');
-    request.flush(mockWeatherData);
+    request.flush(mockCurrentWeather);
 
     expect(received).toEqual([
       { state: 'loading' },
-      { state: 'success', data: mockWeatherData }
+      { state: 'success', data: mockCurrentWeather }
     ]);
   });
 

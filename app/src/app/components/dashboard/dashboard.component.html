@@ -1,14 +1,14 @@
 @if (weatherData(); as weatherData) {
-  @if (weatherData.current.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
+  @if (weatherData.current.state === 'loading' || weatherData.currentHour.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
-  } @else if (weatherData.current.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
+  } @else if (weatherData.current.state === 'error' || weatherData.currentHour.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
     <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
       <div class="card" style="padding:36px;text-align:center">
         <div class="eyebrow" style="color:var(--c-temp)">Connection error</div>
         <p style="margin:12px 0 0;color:var(--ink-soft);font-size:15px">Unable to load weather data.</p>
       </div>
     </div>
-  } @else if (!weatherData.current.data.length) {
+  } @else if (!weatherData.current.data) {
     <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
       <div class="card" style="padding:36px;text-align:center">
         <div class="eyebrow">Waiting for data</div>
@@ -16,7 +16,7 @@
       </div>
     </div>
   } @else {
-    @let latest = weatherData.current.data[weatherData.current.data.length - 1];
+    @let latest = weatherData.current.data.reading;
     @let todayData = weatherData.today.data;
 
     <div class="db-screen detail">
@@ -36,7 +36,13 @@
           </div>
         </div>
         <div class="db-header__right">
-          <span class="pill"><span class="live-dot"></span>&nbsp;Updated {{ getLastUpdateTime(latest) }}</span>
+          @if (isStale()) {
+            <span class="pill pill--stale" [title]="'Station last reported at ' + getLastUpdateTime(latest)">
+              <span class="live-dot live-dot--offline"></span>&nbsp;Offline · last reading {{ lastReadingAgo() }}
+            </span>
+          } @else {
+            <span class="pill"><span class="live-dot"></span>&nbsp;Updated {{ getLastUpdateTime(latest) }}</span>
+          }
           <div class="toggle">
             <button [attr.data-active]="liveMode()" (click)="setLiveMode(true)">LIVE · MIN</button>
             <button [attr.data-active]="!liveMode()" (click)="setLiveMode(false)">TODAY · HR</button>

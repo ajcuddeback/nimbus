@@ -81,6 +81,19 @@ html, body { margin: 0; padding: 0; border: none; outline: none; }
   animation: pulse 2.4s ease-out infinite;
 }
 
+/* Station offline: amber, and the transmit pulse stops — a still dot reads as "nothing arriving". */
+.live-dot--offline {
+  background: oklch(0.75 0.15 78);
+  box-shadow: none;
+  animation: none;
+}
+
+.pill--stale {
+  color: oklch(0.62 0.14 68);
+  border-color: color-mix(in oklch, oklch(0.75 0.15 78) 45%, var(--line));
+  background: color-mix(in oklch, oklch(0.75 0.15 78) 12%, transparent);
+}
+
 @keyframes pulse {
   0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--c-press) 55%, transparent); }
   70%  { box-shadow: 0 0 0 7px transparent; }
