@@ -1,0 +1,67 @@
+<button #trigger type="button" class="dp-trigger"
+        aria-haspopup="dialog" [attr.aria-expanded]="open()"
+        (click)="toggle()">
+  <span class="dp-trigger__label">{{ label() }}</span>
+  <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+    <rect x="2" y="3.5" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M2 7.4h12M5.4 1.9v3M10.6 1.9v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </svg>
+</button>
+
+@if (open()) {
+  <!-- Doubles as the click-away target on desktop and the dimming scrim on phones. -->
+  <div class="dp-scrim" (click)="close()"></div>
+
+  <div class="dp-panel" role="dialog" aria-modal="true" aria-label="Choose a date">
+    <div class="dp-head">
+      <button type="button" class="dp-nav" aria-label="Previous month" (click)="shiftMonth(-1)">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M10 3.5L5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="dp-head__month">{{ monthTitle() }}</div>
+
+      <button type="button" class="dp-nav" aria-label="Next month"
+              [disabled]="!canGoNextMonth()" (click)="shiftMonth(1)">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6 3.5L10.5 8L6 12.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="dp-weekdays" aria-hidden="true">
+      @for (weekday of weekdayLabels; track $index) {
+        <span>{{ weekday }}</span>
+      }
+    </div>
+
+    <div #grid class="dp-grid" role="grid" tabindex="0"
+         [attr.aria-activedescendant]="'dp-day-' + focusedDate().toISODate()"
+         (keydown)="onKeydown($event)">
+      @for (week of weeks(); track week[0].iso) {
+        <div class="dp-week" role="row">
+          @for (cell of week; track cell.iso) {
+            <button type="button" role="gridcell" tabindex="-1" class="dp-day"
+                    [id]="'dp-day-' + cell.iso"
+                    [class.is-outside]="!cell.inMonth"
+                    [class.is-today]="cell.isToday"
+                    [class.is-selected]="cell.isSelected"
+                    [class.is-focused]="cell.isFocused"
+                    [disabled]="cell.disabled"
+                    [attr.aria-selected]="cell.isSelected"
+                    [attr.aria-label]="cell.date.toFormat('cccc, LLLL d, yyyy')"
+                    (click)="selectDate(cell.date)">
+              {{ cell.dayOfMonth }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="dp-foot">
+      <button type="button" class="dp-foot__btn" (click)="selectToday()">Today</button>
+      <button type="button" class="dp-foot__btn dp-foot__btn--muted" (click)="close()">Close</button>
+    </div>
+  </div>
+}

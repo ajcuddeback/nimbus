@@ -1,0 +1,215 @@
+:host {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ---- Trigger ---- */
+.dp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+
+  &:hover { background: var(--tile); border-color: var(--line); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  &[aria-expanded="true"] { background: var(--tile); border-color: var(--line); }
+
+  svg { color: var(--ink-faint); flex-shrink: 0; }
+}
+
+/* ---- Panel ---- */
+.dp-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
+
+.dp-panel {
+  position: absolute;
+  z-index: 41;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 302px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-lg);
+  animation: dp-pop .14s ease-out;
+}
+
+@keyframes dp-pop {
+  from { opacity: 0; transform: translateY(-6px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dp-head__month {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.dp-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, opacity .15s ease;
+
+  &:hover:not(:disabled) { background: var(--tile); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  &:disabled { opacity: .32; cursor: not-allowed; }
+}
+
+/* ---- Grid ---- */
+.dp-weekdays,
+.dp-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dp-weekdays span {
+  padding-bottom: 6px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.dp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  outline: none;
+}
+
+.dp-day {
+  height: 36px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+
+  &:hover:not(:disabled) { background: var(--tile); }
+
+  &.is-outside { color: var(--ink-faint); }
+
+  /* Today reads as an outline; the chosen day as a filled chip. */
+  &.is-today:not(.is-selected) {
+    border-color: color-mix(in oklch, var(--accent) 55%, var(--line));
+    color: var(--accent);
+    font-weight: 620;
+  }
+
+  &.is-selected {
+    background: var(--ink);
+    color: var(--card);
+    font-weight: 620;
+  }
+
+  &:disabled {
+    color: color-mix(in oklch, var(--ink-faint) 45%, transparent);
+    cursor: not-allowed;
+  }
+}
+
+/* The keyboard cursor, shown only while the grid itself holds focus. */
+.dp-grid:focus .dp-day.is-focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---- Footer ---- */
+.dp-foot {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.dp-foot__btn {
+  flex: 1;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--card);
+  background: var(--ink);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: opacity .15s ease, background .15s ease;
+
+  &:hover { opacity: .92; }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.dp-foot__btn--muted {
+  color: var(--ink);
+  background: transparent;
+  border-color: var(--line);
+
+  &:hover { background: var(--tile); }
+}
+
+/*
+ * Phones: the trigger takes the row and the panel drops full width beneath it, with
+ * thumb-sized targets. Deliberately not a fixed-position sheet — the dashboard's
+ * `container-type: inline-size` makes it a containing block for fixed descendants, so a
+ * viewport-anchored sheet would land at the bottom of the whole page instead of the screen.
+ */
+@media (max-width: 560px) {
+  :host { display: flex; flex: 1; }
+  .dp-trigger { flex: 1; justify-content: center; }
+
+  .dp-scrim { background: oklch(0 0 0 / .35); }
+
+  .dp-panel {
+    left: 0;
+    right: 0;
+    width: auto;
+    padding: 16px;
+    border-radius: var(--r);
+  }
+
+  .dp-head__month { font-size: 15px; }
+  .dp-nav { width: 40px; height: 40px; }
+  .dp-day { height: 44px; font-size: 15px; border-radius: 12px; }
+  .dp-foot__btn { padding: 12px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dp-panel { animation: none; }
+}

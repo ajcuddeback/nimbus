@@ -120,17 +120,13 @@ public final class WeatherDataService {
     }
 
     /**
-     * Hourly-aggregated weather for the current day (in the caller's timezone), computed on read
-     * from the raw minute series, oldest hour first.
+     * Hourly aggregates between two instants, bucketed in the caller's timezone.
+     * {@code from} is inclusive and {@code to} is exclusive, so callers pass the start of the
+     * following day rather than trying to name its last representable moment.
      */
-    public Flux<WeatherData> getTodaysWeather(final String stationId, final String timezone) {
-        final ZoneId zone = ZoneId.of(timezone);
-        final ZonedDateTime now = ZonedDateTime.now(zone);
-        final Instant startOfDay = now.withHour(0).withMinute(0).withSecond(0).withNano(0).toInstant();
-        final Instant endOfDay = now.withHour(23).withMinute(59).withSecond(59).withNano(999_999_999).toInstant();
-
+    public Flux<WeatherData> getWeatherInRange(final String stationId, final String timezone, final Instant from, final Instant to) {
         final Aggregation aggregation = Aggregation.newAggregation(
-                hourlyAggregationStages(stationId, startOfDay, endOfDay, timezone, true)
+                hourlyAggregationStages(stationId, from, to, timezone, true)
         );
 
         return mongoTemplate.aggregate(aggregation, SERIES_COLLECTION, Document.class)
@@ -166,7 +162,7 @@ public final class WeatherDataService {
 
     /**
      * Builds the shared read-time hourly-aggregation pipeline:
-     *   1. match the station (and optional time range)
+     *   1. match the station (and optional time range, {@code start} inclusive, {@code end} exclusive)
      *   2. de-duplicate to one record per exact timestamp (read-time guarantee against duplicates)
      *   3. bucket into local-time hours, averaging most fields, summing rainfall, and taking the
      *      circular mean of wind direction
@@ -182,7 +178,9 @@ public final class WeatherDataService {
     ) {
         final Document match = new Document("stationId", stationId);
         if (start != null && end != null) {
-            match.append("timestamp", new Document("$gte", start).append("$lte", end));
+            // Half-open: an inclusive end would need the last representable instant of the day,
+            // and any rounding there silently drops readings in the final fraction of a second.
+            match.append("timestamp", new Document("$gte", start).append("$lt", end));
         }
 
         final Document dedupe = new Document("$group", new Document("_id", "$timestamp")
