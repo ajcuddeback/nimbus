@@ -1,7 +1,7 @@
 @if (weatherData(); as weatherData) {
-  @if (weatherData.current.state === 'loading' || weatherData.currentHour.state === 'loading' || weatherData.summary.state === 'loading' || weatherData.today.state === 'loading') {
+  @if (weatherData.current.state === 'loading' || weatherData.day.state === 'loading') {
     <ng-container *ngTemplateOutlet="loading" />
-  } @else if (weatherData.current.state === 'error' || weatherData.currentHour.state === 'error' || weatherData.today.state === 'error' || weatherData.summary.state === 'error') {
+  } @else if (weatherData.current.state === 'error' || weatherData.day.state === 'error' || weatherData.currentHour?.state === 'error' || weatherData.summary?.state === 'error') {
     <div class="db-screen" style="display:flex;align-items:center;justify-content:center;padding:40px">
       <div class="card" style="padding:36px;text-align:center">
         <div class="eyebrow" style="color:var(--c-temp)">Connection error</div>
@@ -17,7 +17,6 @@
     </div>
   } @else {
     @let latest = weatherData.current.data.reading;
-    @let todayData = weatherData.today.data;
 
     <div class="db-screen detail">
 
@@ -45,7 +44,7 @@
           }
           <div class="toggle">
             <button [attr.data-active]="liveMode()" (click)="setLiveMode(true)">LIVE · MIN</button>
-            <button [attr.data-active]="!liveMode()" (click)="setLiveMode(false)">TODAY · HR</button>
+            <button [attr.data-active]="!liveMode()" (click)="setLiveMode(false)">DAILY · HR</button>
           </div>
           <button class="db-theme-btn" (click)="toggleTheme()" [title]="isDark ? 'Light mode' : 'Dark mode'">
             @if (isDark) {
@@ -64,40 +63,90 @@
         </div>
       </div>
 
-      <!-- AI Summary strip -->
-      <div class="db-summary">
+      @if (liveMode()) {
+        <!-- AI Summary strip -->
+        <div class="db-summary">
         <span class="eyebrow db-summary__label">
           <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6z" fill="currentColor"/>
           </svg>
           AI Summary
         </span>
-        <p class="db-summary__text">{{ weatherData.summary.state === 'success' ? weatherData.summary.data.summary : '' }}</p>
-      </div>
+          <p class="db-summary__text">{{ aiSummary() }}</p>
+        </div>
+      } @else {
+        <div class="db-data-picker">
+          <button class="btn btn--ghost" (click)="subtractDay()">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <path d="M13 8H4M8 4L4 8l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <app-date-picker
+            [value]="dateSelected()"
+            [label]="label()"
+            (valueChange)="dateSelected.set($event)"/>
+
+          @if(!isToday()) {
+            <button class="btn btn--ghost" (click)="addDay()">
+              <svg width="14" height="14" viewBox="0 0 16 16">
+                <path d="M3 8h9M8 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          }
+
+          @if(!isToday()) {
+            <button class="btn btn--jump-back btn--ghost" (click)="goToToday()">
+              <p>Jump Back to Today</p>
+            </button>
+          }
+        </div>
+      }
 
       <div class="db-body">
+
+        @if (!hasDayReadings()) {
+          <div class="card db-empty">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="3"/>
+              <path d="M3 10h18M8 3v4M16 3v4"/>
+              <path d="M9.5 14.5l5 4M14.5 14.5l-5 4"/>
+            </svg>
+            <div class="eyebrow">No readings</div>
+            <p class="db-empty__text">
+              Nothing was recorded for <b>{{ emptyDayLabel() }}</b>. The station was either offline
+              or not yet collecting data on that day.
+            </p>
+          </div>
+        } @else {
 
         <!-- Temperature Hero -->
         <div class="card">
           <div class="detail__hero">
             <div class="detail__heroside">
               <div class="eyebrow" style="color:var(--c-temp)">Temperature</div>
+
               <div class="db-hero-temp">
-                <span class="db-hero-temp__val">{{ formatTempF(latest.temp) }}</span>
+                <span class="db-hero-temp__val">{{ headlineTempF() }}</span>
                 <span class="db-hero-temp__unit">°F</span>
               </div>
+
               <div class="db-readouts">
+                @if (isToday()) {
+                  <div class="db-readout">
+                    <span class="db-readout__k">Feels like</span>
+                    <span class="db-readout__v">{{ getFeelsLike(latest.temp, latest.hum, latest.windSpeed) }} °F</span>
+                  </div>
+                }
+
                 <div class="db-readout">
-                  <span class="db-readout__k">Feels like</span>
-                  <span class="db-readout__v">{{ getFeelsLike(latest.temp, latest.hum, latest.windSpeed) }} °F</span>
+                  <span class="db-readout__k">{{isToday() ? "Today" : ""}} high</span>
+                  <span class="db-readout__v" style="color:var(--c-temp)">{{ peakTempF() }} °F</span>
                 </div>
                 <div class="db-readout">
-                  <span class="db-readout__k">Today high</span>
-                  <span class="db-readout__v" style="color:var(--c-temp)">{{ getPeakTemp(todayData, latest) }} °F</span>
-                </div>
-                <div class="db-readout">
-                  <span class="db-readout__k">Today low</span>
-                  <span class="db-readout__v">{{ getLowTemp(todayData, latest) }} °F</span>
+                  <span class="db-readout__k">{{isToday() ? "Today" : ""}} low</span>
+                  <span class="db-readout__v">{{ lowTempF() }} °F</span>
                 </div>
               </div>
             </div>
@@ -117,7 +166,7 @@
             <div class="db-metric__head">
               <div>
                 <div class="eyebrow" style="color:var(--c-humid)">Humidity</div>
-                <div class="db-metric__val">{{ latest.hum.toFixed(1) }}%</div>
+                <div class="db-metric__val">{{ headlineHumidity() }}%</div>
               </div>
               <span class="db-metric__note">{{ chartModeNote() }}</span>
             </div>
@@ -132,7 +181,7 @@
             <div class="db-metric__head">
               <div>
                 <div class="eyebrow" style="color:var(--c-wind)">Wind speed</div>
-                <div class="db-metric__val">{{ latest.windSpeed.toFixed(2) }} mph</div>
+                <div class="db-metric__val">{{ headlineWindSpeed() }} mph</div>
               </div>
               <span class="db-metric__note">{{ chartModeNote() }}</span>
             </div>
@@ -147,7 +196,7 @@
             <div class="db-metric__head">
               <div>
                 <div class="eyebrow" style="color:var(--c-rain)">Rain (cumulative)</div>
-                <div class="db-metric__val">{{ rainTotalToday().toFixed(2) }} in</div>
+                <div class="db-metric__val">{{ rainTotal().toFixed(2) }} in</div>
               </div>
               <span class="db-metric__note">{{ rainModeNote() }}</span>
             </div>
@@ -159,40 +208,56 @@
           </div>
         </div>
 
-        <!-- Gauges -->
+        <!-- Gauges. On a past day these summarise the day rather than the current moment. -->
         <div class="detail__gauges">
-          <div class="card db-gauge-card">
-            <app-nimbus-compass
-              [deg]="latest.windDirection"
-              [dirName]="getWindDirectionLabel(latest.windDirection)"
-              [speed]="latest.windSpeed"
-              [size]="150"/>
-            <div class="db-gauge-info">
-              <div class="eyebrow" style="color:var(--c-wind)">Wind direction</div>
-              <p class="db-gauge-desc">
-                From the <b>{{ getWindDirectionLabel(latest.windDirection) }}</b> ({{ roundDeg(latest.windDirection) }}°)
-                at <b>{{ latest.windSpeed.toFixed(2) }} mph</b>.
-                {{ getWindDescription(latest.windSpeed, getWindDirectionLabel(latest.windDirection)) }}
-              </p>
-              <app-sparkline [values]="todayWindValues()" color="var(--c-wind)" [width]="210" [height]="30" [fluid]="true"/>
+          @if (windSummary(); as wind) {
+            <div class="card db-gauge-card">
+              <app-nimbus-compass
+                [deg]="wind.degrees"
+                [dirName]="getWindDirectionLabel(wind.degrees)"
+                [speed]="wind.speed"
+                [size]="150"/>
+              <div class="db-gauge-info">
+                <div class="eyebrow" style="color:var(--c-wind)">Wind direction</div>
+                <p class="db-gauge-desc">
+                  @if (isToday()) {
+                    From the <b>{{ getWindDirectionLabel(wind.degrees) }}</b> ({{ roundDeg(wind.degrees) }}°)
+                    at <b>{{ headlineWindSpeed() }} mph</b>.
+                    {{ getWindDescription(wind.speed, getWindDirectionLabel(wind.degrees)) }}
+                  } @else {
+                    Prevailing wind from the <b>{{ getWindDirectionLabel(wind.degrees) }}</b> ({{ roundDeg(wind.degrees) }}°),
+                    averaging <b>{{ headlineWindSpeed() }} mph</b>.
+                    {{ getDayWindDescription(wind.speed) }}
+                  }
+                </p>
+                <app-sparkline [values]="dayWindValues()" color="var(--c-wind)" [width]="210" [height]="30" [fluid]="true"/>
+              </div>
             </div>
-          </div>
+          }
 
-          <div class="card db-gauge-card">
-            <app-pressure-gauge
-              [value]="convertPressureToInches(latest.pr)"
-              [min]="29.4" [max]="30.4" label="inHg"
-              [trend]="pressureTrend()"
-              [size]="150"/>
-            <div class="db-gauge-info">
-              <div class="eyebrow" style="color:var(--c-press)">Barometric pressure</div>
-              <p class="db-gauge-desc">
-                {{ getPressureDescription(convertPressureToInches(latest.pr), pressureTrend()) }}
-              </p>
-              <app-sparkline [values]="todayPressureValues()" color="var(--c-press)" [width]="210" [height]="30" [fluid]="true"/>
+          @if (pressureInHg(); as pressure) {
+            <div class="card db-gauge-card">
+              <app-pressure-gauge
+                [value]="pressure"
+                [min]="29.4" [max]="30.4" label="inHg"
+                [trend]="pressureTrend()"
+                [size]="150"/>
+              <div class="db-gauge-info">
+                <div class="eyebrow" style="color:var(--c-press)">Barometric pressure</div>
+                <p class="db-gauge-desc">
+                  @if (isToday()) {
+                    {{ getPressureDescription(pressure, pressureTrend()) }}
+                  } @else {
+                    {{ getDayPressureDescription(pressure, pressureChangeInHg()) }}
+                  }
+                </p>
+                <app-sparkline [values]="dayPressureValues()" color="var(--c-press)" [width]="210" [height]="30" [fluid]="true"/>
+              </div>
             </div>
-          </div>
+          }
         </div>
+
+        }
 
         <div class="db-footer">
           Data collected from a personal Raspberry Pi weather station · MQTT → broker → API · NIMBUS-01

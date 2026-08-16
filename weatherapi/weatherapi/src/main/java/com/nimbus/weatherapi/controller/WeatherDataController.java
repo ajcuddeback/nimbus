@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 @RestController
 @RequestMapping("/weatherData")
 public class WeatherDataController {
@@ -19,12 +23,16 @@ public class WeatherDataController {
         this.weatherDataService = weatherDataService;
     }
 
-    @GetMapping
-    public Mono<Page<WeatherData>> getWeatherDataByLocation(
+    @GetMapping()
+    public Flux<WeatherData> getWeatherForRange(
             @RequestParam String stationId,
-            Pageable pageable
+            @RequestParam String timezone,
+            @RequestParam Long from,
+            @RequestParam Long to
     ) {
-        return weatherDataService.getWeatherDataByLocation(stationId, pageable);
+        final Instant fromInstant = Instant.ofEpochSecond(from);
+        final Instant toInstant = Instant.ofEpochSecond(to);
+        return weatherDataService.getWeatherInRange(stationId, timezone, fromInstant, toInstant);
     }
 
     /**
@@ -55,6 +63,12 @@ public class WeatherDataController {
             @RequestParam String stationId,
             @RequestParam String timezone
     ) {
-        return weatherDataService.getTodaysWeather(stationId, timezone);
+        final ZoneId zone = ZoneId.of(timezone);
+        final ZonedDateTime now = ZonedDateTime.now(zone);
+        final Instant startOfDay = now.withHour(0).withMinute(0).withSecond(0).withNano(0).toInstant();
+        final Instant endOfDay = now.withHour(23).withMinute(59).withSecond(59).withNano(999_999_999).toInstant();
+        return weatherDataService.getWeatherInRange(stationId, timezone, startOfDay, endOfDay);
     }
+
+
 }

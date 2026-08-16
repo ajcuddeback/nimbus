@@ -119,18 +119,9 @@ public final class WeatherDataService {
                 .transform(WeatherDataService::dedupeByTimestamp);
     }
 
-    /**
-     * Hourly-aggregated weather for the current day (in the caller's timezone), computed on read
-     * from the raw minute series, oldest hour first.
-     */
-    public Flux<WeatherData> getTodaysWeather(final String stationId, final String timezone) {
-        final ZoneId zone = ZoneId.of(timezone);
-        final ZonedDateTime now = ZonedDateTime.now(zone);
-        final Instant startOfDay = now.withHour(0).withMinute(0).withSecond(0).withNano(0).toInstant();
-        final Instant endOfDay = now.withHour(23).withMinute(59).withSecond(59).withNano(999_999_999).toInstant();
-
+    public Flux<WeatherData> getWeatherInRange(final String stationId, final String timezone, final Instant from, final Instant to) {
         final Aggregation aggregation = Aggregation.newAggregation(
-                hourlyAggregationStages(stationId, startOfDay, endOfDay, timezone, true)
+                hourlyAggregationStages(stationId, from, to, timezone, true)
         );
 
         return mongoTemplate.aggregate(aggregation, SERIES_COLLECTION, Document.class)

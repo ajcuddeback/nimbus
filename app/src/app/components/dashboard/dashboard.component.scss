@@ -62,8 +62,54 @@
 
 .db-summary__text { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); text-wrap: pretty; }
 
+.db-data-picker {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  background: color-mix(in oklch, var(--tile) 45%, transparent);
+}
+
+/* Phones: the date takes its own row, so the calendar can drop full width beneath it. */
+@media (max-width: 560px) {
+  .db-data-picker {
+    padding: 14px 16px;
+
+    app-date-picker { order: -1; flex-basis: 100%; }
+  }
+}
+
+.btn--jump-back {
+  padding: 0rem .5rem;
+
+}
+
 /* Body */
 .db-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+
+/* Shown instead of the cards when the selected day has no readings at all. */
+.db-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 56px 28px;
+  text-align: center;
+
+  svg { color: var(--ink-faint); }
+}
+
+.db-empty__text {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+
+  b { color: var(--ink); font-weight: 600; }
+}
 
 /* Hero temp */
 .db-hero-temp {

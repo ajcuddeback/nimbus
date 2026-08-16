@@ -5,6 +5,7 @@ import { CurrentWeather, WeatherData } from '../models/weather-data.interface';
 import { environment } from '../../environments/environment';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api.interface';
+import {DateTime} from 'luxon';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -15,9 +16,16 @@ export interface CombinedWeatherData {
   summary: ApiResponse<{ summary: string }>;
 }
 
-/** Detailed page: everything the landing page needs plus this hour's minute-by-minute readings. */
-export interface DetailedWeatherData extends CombinedWeatherData {
-  currentHour: ApiResponse<WeatherData[]>;
+/**
+ * What the detailed dashboard renders. `day` is the hourly readings for whichever day is on
+ * screen — today's, or a past day's. `currentHour` and `summary` are LIVE-tab only; on the
+ * DAILY tab they are absent because those endpoints are never called.
+ */
+export interface DashboardWeather {
+  current: ApiResponse<CurrentWeather | null>;
+  day: ApiResponse<WeatherData[]>;
+  currentHour?: ApiResponse<WeatherData[]>;
+  summary?: ApiResponse<{ summary: string }>;
 }
 
 @Injectable({
@@ -27,7 +35,8 @@ export class WeatherDataService {
   private readonly apiService = inject(ApiService);
   private readonly backendEndpoint = environment.WEATHER_API_ENDPOINT;
   private readonly combinedWeatherDataByStation = new Map<string, Observable<CombinedWeatherData>>();
-  private readonly detailedWeatherDataByStation = new Map<string, Observable<DetailedWeatherData>>();
+  private readonly liveWeatherByStation = new Map<string, Observable<DashboardWeather>>();
+  private readonly dailyWeatherByStation = new Map<string, Observable<DashboardWeather>>();
 
   /** The single most recent minute reading for a station, with the API's freshness verdict. */
   getCurrentWeatherData(stationId: string): Observable<ApiResponse<CurrentWeather | null>> {
@@ -49,6 +58,17 @@ export class WeatherDataService {
     const params = new HttpParams().set('stationId', stationId).set('timezone', timeZone);
 
     return this.apiService.get(`${this.backendEndpoint}/weatherData/today`, params);
+  }
+
+  /** Hourly aggregates for one calendar day. The API takes epoch *seconds*, not millis. */
+  getWeatherDataForDate(stationId: string, date: DateTime): Observable<ApiResponse<WeatherData[]>> {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const from = Math.floor(date.startOf("day").toSeconds());
+    const to = Math.floor(date.endOf("day").toSeconds());
+
+    const params = new HttpParams().set('stationId', stationId).set('timezone', timeZone).set('from', from).set('to', to);
+
+    return this.apiService.get(`${this.backendEndpoint}/weatherData`, params);
   }
 
   getAISummary(stationId: string): Observable<ApiResponse<{ summary: string }>> {
@@ -74,19 +94,50 @@ export class WeatherDataService {
     return this.combinedWeatherDataByStation.get(stationId)!;
   }
 
-  getDetailedWeatherData(stationId: string): Observable<DetailedWeatherData> {
-    if (!this.detailedWeatherDataByStation.has(stationId)) {
-      const combined$ = timer(0, POLL_INTERVAL_MS).pipe(
+  /** Everything the LIVE tab shows: minute readings and the AI summary, plus today's context. */
+  getLiveWeather(stationId: string): Observable<DashboardWeather> {
+    if (!this.liveWeatherByStation.has(stationId)) {
+      const live$ = timer(0, POLL_INTERVAL_MS).pipe(
         switchMap(() => forkJoin({
           current: this.getCurrentWeatherData(stationId),
+          day: this.getTodaysWeatherData(stationId),
           currentHour: this.getCurrentHourWeatherData(stationId),
-          today: this.getTodaysWeatherData(stationId),
           summary: this.getAISummary(stationId)
         })),
         shareReplay({ bufferSize: 1, refCount: true })
       );
-      this.detailedWeatherDataByStation.set(stationId, combined$);
+      this.liveWeatherByStation.set(stationId, live$);
     }
-    return this.detailedWeatherDataByStation.get(stationId)!;
+    return this.liveWeatherByStation.get(stationId)!;
+  }
+
+  /**
+   * Everything the DAILY tab shows: today's hourly readings, plus the current reading the
+   * hero, gauges, and offline badge display. The hour and summary endpoints are not requested.
+   */
+  getDailyWeather(stationId: string): Observable<DashboardWeather> {
+    if (!this.dailyWeatherByStation.has(stationId)) {
+      const daily$ = timer(0, POLL_INTERVAL_MS).pipe(
+        switchMap(() => forkJoin({
+          current: this.getCurrentWeatherData(stationId),
+          day: this.getTodaysWeatherData(stationId)
+        })),
+        shareReplay({ bufferSize: 1, refCount: true })
+      );
+      this.dailyWeatherByStation.set(stationId, daily$);
+    }
+    return this.dailyWeatherByStation.get(stationId)!;
+  }
+
+  /**
+   * A past day's hourly readings. Fetched once rather than polled — a finished day does not
+   * change. `current` still comes from the live endpoint, since the hero and the offline badge
+   * always show the station's newest reading.
+   */
+  getWeatherForDate(stationId: string, date: DateTime): Observable<DashboardWeather> {
+    return forkJoin({
+      current: this.getCurrentWeatherData(stationId),
+      day: this.getWeatherDataForDate(stationId, date)
+    });
   }
 }

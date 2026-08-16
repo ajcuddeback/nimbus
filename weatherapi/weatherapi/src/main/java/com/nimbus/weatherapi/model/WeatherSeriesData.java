@@ -21,8 +21,6 @@ import java.time.Instant;
 @ToString
 @TimeSeries(collection = "weather_data_series", timeField = "timestamp", metaField = "stationId", granularity = Granularity.MINUTES)
 public final class WeatherSeriesData {
-    @Id
-    private String id;
     private final double temp;
     private final String tempFormat;
     private final double hum;
@@ -37,11 +35,11 @@ public final class WeatherSeriesData {
     private final String stationId;
 
     @PersistenceCreator
-    public WeatherSeriesData(final String id, final double temp, final String tempFormat, final double hum,
+    public WeatherSeriesData(final double temp, final String tempFormat, final double hum,
                              final double pr, final String prFormat, final double windDirection, final double windSpeed,
                              final String windSpeedFormat, final double rainfall, final String rainfallFormat,
                              final Instant timestamp, final String stationId) {
-        this.id = id;
+
         this.temp = temp;
         this.tempFormat = tempFormat;
         this.hum = hum;
@@ -54,13 +52,5 @@ public final class WeatherSeriesData {
         this.rainfallFormat = rainfallFormat;
         this.timestamp = timestamp;
         this.stationId = stationId;
-    }
-
-    public WeatherSeriesData(final double temp, final String tempFormat, final double hum,
-                             final double pr, final String prFormat, final double windDirection, final double windSpeed,
-                             final String windSpeedFormat, final double rainfall, final String rainfallFormat,
-                             final Instant timestamp, final String stationId) {
-        this(null, temp, tempFormat, hum, pr, prFormat, windDirection, windSpeed, windSpeedFormat,
-                rainfall, rainfallFormat, timestamp, stationId);
     }
 }
