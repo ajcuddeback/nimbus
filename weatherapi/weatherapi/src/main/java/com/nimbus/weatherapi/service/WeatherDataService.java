@@ -119,6 +119,11 @@ public final class WeatherDataService {
                 .transform(WeatherDataService::dedupeByTimestamp);
     }
 
+    /**
+     * Hourly aggregates between two instants, bucketed in the caller's timezone.
+     * {@code from} is inclusive and {@code to} is exclusive, so callers pass the start of the
+     * following day rather than trying to name its last representable moment.
+     */
     public Flux<WeatherData> getWeatherInRange(final String stationId, final String timezone, final Instant from, final Instant to) {
         final Aggregation aggregation = Aggregation.newAggregation(
                 hourlyAggregationStages(stationId, from, to, timezone, true)
@@ -157,7 +162,7 @@ public final class WeatherDataService {
 
     /**
      * Builds the shared read-time hourly-aggregation pipeline:
-     *   1. match the station (and optional time range)
+     *   1. match the station (and optional time range, {@code start} inclusive, {@code end} exclusive)
      *   2. de-duplicate to one record per exact timestamp (read-time guarantee against duplicates)
      *   3. bucket into local-time hours, averaging most fields, summing rainfall, and taking the
      *      circular mean of wind direction
@@ -173,7 +178,9 @@ public final class WeatherDataService {
     ) {
         final Document match = new Document("stationId", stationId);
         if (start != null && end != null) {
-            match.append("timestamp", new Document("$gte", start).append("$lte", end));
+            // Half-open: an inclusive end would need the last representable instant of the day,
+            // and any rounding there silently drops readings in the final fraction of a second.
+            match.append("timestamp", new Document("$gte", start).append("$lt", end));
         }
 
         final Document dedupe = new Document("$group", new Document("_id", "$timestamp")

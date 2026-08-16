@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {combineLatest, interval, switchMap} from 'rxjs';
@@ -74,10 +74,16 @@ export class DashboardComponent {
 
   dateSelected = signal<DateTime>(DateTime.now().startOf('day'));
 
-  isToday = computed(() => {
-    const date = this.dateSelected();
-    return date.hasSame(DateTime.now(), 'day');
-  })
+  /**
+   * Local midnight, re-read off the one-second tick so a page left open overnight notices the
+   * date change. The equality check keeps it emitting once a day rather than once a second.
+   */
+  protected readonly today = computed(() => {
+    this.nowSeconds();
+    return DateTime.now().startOf('day');
+  }, { equal: (a, b) => a.hasSame(b, 'day') });
+
+  isToday = computed(() => this.dateSelected().hasSame(this.today(), 'day'));
 
   label = computed(() => {
     const date = this.dateSelected();
@@ -118,7 +124,7 @@ export class DashboardComponent {
   addDay() {
     this.dateSelected.update(value => {
       const dateSelectedPlus1 = value.plus({days: 1}).startOf('day');
-      if (dateSelectedPlus1 > DateTime.now().startOf('day')) {
+      if (dateSelectedPlus1 > this.today()) {
         console.warn("Can not select a day in the future")
         return value;
       }
@@ -127,7 +133,7 @@ export class DashboardComponent {
   }
 
   goToToday() {
-    this.dateSelected.set(DateTime.now().startOf('day'));
+    this.dateSelected.set(this.today());
   }
 
   /**
@@ -254,10 +260,27 @@ export class DashboardComponent {
     return this.weatherUtils.formatElapsed(this.weatherUtils.elapsedSince(reading, this.nowSeconds()));
   });
 
+  /** The day that was "today" when the rollover effect last ran. */
+  private previousToday = DateTime.now().startOf('day');
+
   constructor() {
     interval(1000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.nowSeconds.set(Math.floor(Date.now() / 1000)));
+
+    // A dashboard left open overnight should follow the clock: at midnight, someone watching
+    // "Today" moves to the new day. Someone who had deliberately navigated to an older day
+    // stays where they are.
+    effect(() => {
+      const today = this.today();
+      untracked(() => {
+        const rolledOverFrom = this.previousToday;
+        this.previousToday = today;
+        if (!today.hasSame(rolledOverFrom, 'day') && this.dateSelected().hasSame(rolledOverFrom, 'day')) {
+          this.dateSelected.set(today);
+        }
+      });
+    });
   }
 
   /**

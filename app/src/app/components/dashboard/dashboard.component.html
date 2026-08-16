@@ -84,6 +84,7 @@
 
           <app-date-picker
             [value]="dateSelected()"
+            [max]="today()"
             [label]="label()"
             (valueChange)="dateSelected.set($event)"/>
 

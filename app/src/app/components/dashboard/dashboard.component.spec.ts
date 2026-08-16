@@ -5,6 +5,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter } from '@angular/router';
 import { provideEchartsCore } from 'ngx-echarts';
 
+import { DateTime, Settings } from 'luxon';
+
 import { DashboardComponent } from './dashboard.component';
 import { environment } from '../../../environments/environment';
 import { CurrentWeather, WeatherData } from '../../models/weather-data.interface';
@@ -107,6 +109,10 @@ describe('DashboardComponent', () => {
     rangeResponse = [mockReading];
   });
 
+  afterEach(() => {
+    Settings.now = () => Date.now();
+  });
+
   it('should create', fakeAsync(() => {
     createComponent();
     flushPending();
@@ -162,8 +168,9 @@ describe('DashboardComponent', () => {
     // The day's readings come from the range endpoint; current still backs the hero and badge.
     expect(flushPending()).toEqual({ current: 1, today: 0, hour: 0, summary: 0, range: 1 });
 
+    // Local midnight to the next local midnight: `to` is exclusive, so a plain day is exactly 24h.
     const [from, to] = rangeQueries[0].match(/from=(\d+)&to=(\d+)/)!.slice(1).map(Number);
-    expect(to - from).toBe(24 * 60 * 60 - 1);
+    expect(to - from).toBe(24 * 60 * 60);
 
     // A finished day does not change, so nothing may poll it.
     tick(30_000);
@@ -172,6 +179,56 @@ describe('DashboardComponent', () => {
 
     discardPeriodicTasks();
   }));
+
+  describe('at midnight', () => {
+    const midnight = DateTime.fromISO('2026-08-17T00:00:00');
+
+    /** Moves the wall clock across midnight and lets the one-second tick notice. */
+    function crossMidnight(): void {
+      Settings.now = () => midnight.plus({ seconds: 5 }).toMillis();
+      tick(1000);
+      fixture.detectChanges();
+      flushPending();
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+      Settings.now = () => midnight.minus({ seconds: 10 }).toMillis();
+    });
+
+    it('carries a dashboard showing today onto the new day', fakeAsync(() => {
+      createComponent();
+      flushPending();
+      fixture.detectChanges();
+      expect(component.dateSelected().toISODate()).toBe('2026-08-16');
+      expect(component.label()).toBe('Today');
+
+      crossMidnight();
+
+      expect(component.dateSelected().toISODate()).toBe('2026-08-17');
+      expect(component.label()).toBe('Today');
+
+      discardPeriodicTasks();
+    }));
+
+    it('leaves a deliberately chosen past day where it is', fakeAsync(() => {
+      createComponent();
+      flushPending();
+      component.subtractDay();
+      fixture.detectChanges();
+      tick(0);
+      flushPending();
+      fixture.detectChanges();
+      expect(component.dateSelected().toISODate()).toBe('2026-08-15');
+
+      crossMidnight();
+
+      expect(component.dateSelected().toISODate()).toBe('2026-08-15');
+      expect(component.label()).toBe('August 15, 2026');
+
+      discardPeriodicTasks();
+    }));
+  });
 
   it('explains itself instead of charting stale data when a day has no readings', fakeAsync(() => {
     createComponent();

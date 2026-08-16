@@ -60,11 +60,16 @@ export class WeatherDataService {
     return this.apiService.get(`${this.backendEndpoint}/weatherData/today`, params);
   }
 
-  /** Hourly aggregates for one calendar day. The API takes epoch *seconds*, not millis. */
+  /**
+   * Hourly aggregates for one calendar day. Bounds are epoch *seconds* (not millis), taken from
+   * local midnight to local midnight the next day — `to` is exclusive, and going through the
+   * next day's start rather than 23:59:59 keeps the window exact on days that gain or lose an
+   * hour to daylight saving.
+   */
   getWeatherDataForDate(stationId: string, date: DateTime): Observable<ApiResponse<WeatherData[]>> {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const from = Math.floor(date.startOf("day").toSeconds());
-    const to = Math.floor(date.endOf("day").toSeconds());
+    const to = Math.floor(date.startOf("day").plus({ days: 1 }).toSeconds());
 
     const params = new HttpParams().set('stationId', stationId).set('timezone', timeZone).set('from', from).set('to', to);
 
