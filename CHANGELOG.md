@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://github.com/ajcuddeback/nimbus/compare/v1.9.0...v2.0.0) (2026-08-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Adds historical feature support
+
+### Features
+
+* Adds historical feature support ([2cd019a](https://github.com/ajcuddeback/nimbus/commit/2cd019a1c085f6d8ea7c99e3d746b79294acd018))
+* Adds support for fetching historical data on a day by day basis ([2cd019a](https://github.com/ajcuddeback/nimbus/commit/2cd019a1c085f6d8ea7c99e3d746b79294acd018))
+* Adds support for fetching historical data on a day by day basis ([908dca3](https://github.com/ajcuddeback/nimbus/commit/908dca34b85217aad0860dc311f07652179e1ece))
+
 ## [1.9.0](https://github.com/ajcuddeback/nimbus/compare/v1.8.0...v1.9.0) (2026-08-08)
 
 
